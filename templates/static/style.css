@@ -1,0 +1,306 @@
+/* =========================================
+   COLLEGE ATTENDANCE SYSTEM
+   RESPONSIVE DESIGN
+   ========================================= */
+
+/* ---------- GENERAL ---------- */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f7fb;
+    color: #212529;
+    overflow-x: hidden;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.container,
+.container-fluid {
+    max-width: 100%;
+}
+
+
+/* ---------- CARDS ---------- */
+
+.card {
+    max-width: 100%;
+}
+
+.card-body {
+    word-wrap: break-word;
+}
+
+
+/* ---------- FORMS ---------- */
+
+input,
+select,
+textarea {
+    max-width: 100%;
+}
+
+.form-control,
+.form-select {
+    min-height: 44px;
+}
+
+button,
+.btn {
+    min-height: 42px;
+}
+
+
+/* ---------- TABLES ---------- */
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    width: 100%;
+}
+
+.table th,
+.table td {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+
+/* ---------- DASHBOARD CARDS ---------- */
+
+.dashboard-card {
+    height: 100%;
+    min-height: 120px;
+}
+
+
+/* ---------- SIDEBAR ---------- */
+
+.sidebar {
+    width: 250px;
+    min-height: 100vh;
+}
+
+.sidebar a {
+    display: block;
+    text-decoration: none;
+    padding: 12px 15px;
+}
+
+
+/* ---------- MAIN CONTENT ---------- */
+
+.main-content {
+    width: calc(100% - 250px);
+    min-width: 0;
+}
+
+
+/* =========================================
+   TABLET
+   ========================================= */
+
+@media (max-width: 991px) {
+
+    .sidebar {
+        width: 220px;
+    }
+
+    .main-content {
+        width: calc(100% - 220px);
+    }
+
+    .container {
+        max-width: 95%;
+    }
+
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 767px) {
+
+    body {
+        font-size: 14px;
+    }
+
+    /* Containers */
+
+    .container {
+        width: 100%;
+        max-width: 100%;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    /* Cards */
+
+    .card {
+        margin-bottom: 15px;
+        border-radius: 10px;
+    }
+
+    .card-body {
+        padding: 15px !important;
+    }
+
+    /* Headings */
+
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+    }
+
+    h3 {
+        font-size: 1.2rem;
+    }
+
+    h4 {
+        font-size: 1.1rem;
+    }
+
+    /* Forms */
+
+    .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .row > * {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    .form-control,
+    .form-select {
+        width: 100%;
+        font-size: 16px;
+    }
+
+    /* Buttons */
+
+    .btn {
+        font-size: 14px;
+        padding: 9px 13px;
+    }
+
+    .d-flex.gap-2 {
+        flex-wrap: wrap;
+    }
+
+    .d-flex.gap-2 .btn {
+        flex: 1;
+        min-width: 110px;
+    }
+
+    /* Tables */
+
+    .table-responsive {
+        margin-left: -5px;
+        margin-right: -5px;
+        width: calc(100% + 10px);
+    }
+
+    .table {
+        font-size: 13px;
+        min-width: 700px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px;
+    }
+
+    /* Dashboard cards */
+
+    .dashboard-card {
+        min-height: 100px;
+    }
+
+    /* Sidebar */
+
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+        position: relative;
+    }
+
+    .main-content {
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================
+   SMALL MOBILE
+   ========================================= */
+
+@media (max-width: 480px) {
+
+    body {
+        font-size: 13px;
+    }
+
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    h1 {
+        font-size: 1.4rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    .card-body {
+        padding: 12px !important;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .d-flex.gap-2 {
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    .d-flex.gap-2 .btn {
+        width: 100%;
+    }
+
+    .badge {
+        font-size: 11px;
+    }
+
+}

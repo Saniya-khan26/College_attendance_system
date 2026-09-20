@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}
+My Attendance
+{% endblock %}
+
+{% block content %}
+
+<body class="bg-light">
+
+    <div class="container py-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>📊 My Attendance</h2>
+                <p class="text-muted mb-0">
+                    {{ student.name }} | Roll No: {{ student.roll_no }}
+                </p>
+            </div>
+
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">
+                ← Dashboard
+            </a>
+        </div>
+
+
+        <!-- Attendance Summary -->
+
+        <div class="row g-3 mb-4">
+
+            <div class="col-md-3">
+                <div class="card shadow-sm text-center p-3">
+                    <h6>Total Days</h6>
+                    <h2>{{ total_days }}</h2>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card shadow-sm text-center p-3">
+                    <h6>Present</h6>
+                    <h2>{{ present_days }}</h2>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card shadow-sm text-center p-3">
+                    <h6>Absent</h6>
+                    <h2>{{ absent_days }}</h2>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card shadow-sm text-center p-3">
+                    <h6>Attendance %</h6>
+                    <h2>{{ attendance_percentage }}%</h2>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- Attendance Records -->
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+                <h5 class="mb-0">Attendance Records</h5>
+            </div>
+
+            <div class="card-body">
+
+                {% if attendance_records %}
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover">
+
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Noon</th>
+                                <th>Afternoon</th>
+                                <th>Final Result</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% if attendance_records %}
+
+                            {% for record in attendance_records %}
+
+                            <tr>
+
+                                <!-- Date -->
+                                <td>
+                                    {{ record.date }}
+                                </td>
+
+                                <!-- Noon Attendance -->
+                                <td>
+                                    {% if record.noon == "Present" %}
+                                    <span class="badge bg-success">
+                                        Present
+                                    </span>
+
+                                    {% elif record.noon == "Absent" %}
+                                    <span class="badge bg-danger">
+                                        Absent
+                                    </span>
+
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        Not Marked
+                                    </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Afternoon Attendance -->
+                                <td>
+                                    {% if record.afternoon == "Present" %}
+                                    <span class="badge bg-success">
+                                        Present
+                                    </span>
+
+                                    {% elif record.afternoon == "Absent" %}
+                                    <span class="badge bg-danger">
+                                        Absent
+                                    </span>
+
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        Not Marked
+                                    </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Final Result -->
+                                <td>
+
+                                    {% if record.attendance_type == "Present" %}
+
+                                    <span class="badge bg-success">
+                                        ✅ Present
+                                    </span>
+
+                                    {% elif record.attendance_type == "Late Arrival" %}
+
+                                    <span class="badge bg-primary">
+                                        🕐 Late Arrival
+                                    </span>
+
+                                    {% elif record.attendance_type == "Left Midway" %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        ⚠️ Left Midway
+                                    </span>
+
+                                    {% elif record.attendance_type == "Absent Both Sessions" %}
+
+                                    <span class="badge bg-danger">
+                                        ❌ Absent
+                                    </span>
+
+                                    {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Waiting for Recheck
+                                    </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                            {% else %}
+
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    No attendance records found.
+                                </td>
+                            </tr>
+
+                            {% endif %}
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+                {% else %}
+
+                <div class="text-center py-4">
+                    <h5>No attendance records found.</h5>
+                    <p class="text-muted">
+                        Your attendance will appear here once it is marked.
+                    </p>
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+{%endblock%}

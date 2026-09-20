@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}
+Students
+{% endblock %}
+
+{% block content %}
+<body>
+
+    <div class="container-fluid">
+
+        <div class="row">
+
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-0">
+
+                <div class="p-3 text-white">
+                    <h5>🎓 Attendance</h5>
+                </div>
+
+                <a href="{{ url_for('admin_dashboard') }}" class="d-block text-white text-decoration-none p-3">
+                    🏠 Dashboard
+                </a>
+
+                <a href="{{ url_for('students') }}" class="d-block text-white text-decoration-none p-3">
+                    👨‍🎓 Students
+                </a>
+
+                <a href="#" class="d-block text-white text-decoration-none p-3">
+                    👩‍🏫 Faculty
+                </a>
+
+                <a href="#" class="d-block text-white text-decoration-none p-3">
+                    🏫 Classes
+                </a>
+
+                <a href="#" class="d-block text-white text-decoration-none p-3">
+                    📅 Holidays
+                </a>
+
+                <a href="#" class="d-block text-white text-decoration-none p-3">
+                    📝 Attendance
+                </a>
+
+                <a href="#" class="d-block text-white text-decoration-none p-3">
+                    📊 Reports
+                </a>
+
+                <a href="{{ url_for('logout') }}" class="d-block text-white text-decoration-none p-3">
+                    🚪 Logout
+                </a>
+
+            </div>
+
+
+            <!-- Main Content -->
+
+            <div class="col-md-9 col-lg-10 p-4">
+
+                <div class="d-flex justify-content-between
+                        align-items-center mb-4">
+
+                    <div>
+
+                        <h2>👨‍🎓 Students</h2>
+
+                        <p class="text-muted">
+                            Manage college students
+                        </p>
+
+                    </div>
+
+                    <a href="{{ url_for('add_student') }}" class="btn btn-primary">
+                        + Add Student
+                    </a>
+
+                </div>
+
+
+                <!-- Search -->
+
+                <div class="card shadow-sm border-0 p-3 mb-4">
+                    <form method="GET" action="{{ url_for('students') }}">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control"
+                                placeholder="Search by name, roll number or student ID" value="{{ search }}">
+
+                            <button class="btn btn-primary" type="submit">
+                                🔍 Search
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+
+
+                <!-- Student Table -->
+
+                <div class="card shadow-sm border-0">
+
+                    <div class="card-body">
+
+                        <div class="table-responsive">
+
+                            <table class="table table-hover">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th>Roll No</th>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Course</th>
+                                        <th>Semester</th>
+                                        <th>Division</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    {% for student in students %}
+
+                                    <tr>
+
+                                        <td>
+                                            {{ student.roll_no }}
+                                        </td>
+
+                                        <td>
+                                            {{ student.student_id }}
+                                        </td>
+
+                                        <td>
+                                            {{ student.name }}
+                                        </td>
+
+                                        <td>
+                                            {{ student.course }}
+                                        </td>
+
+                                        <td>
+                                            {{ student.semester }}
+                                        </td>
+
+                                        <td>
+                                            {{ student.division }}
+                                        </td>
+
+                                        <td>
+
+                                            {% if student.status == "active" %}
+
+                                            <span class="badge bg-success">
+                                                Active
+                                            </span>
+
+                                            {% else %}
+
+                                            <span class="badge bg-secondary">
+                                                Inactive
+                                            </span>
+
+                                            {% endif %}
+
+                                        </td>
+
+                                        <td>
+
+                                            <a
+    href="{{ url_for('edit_student', student_id=student._id) }}"
+    class="btn btn-sm btn-outline-primary"
+>
+    Edit
+</a>
+
+                                           <form
+    method="POST"
+    action="{{ url_for('delete_student', student_id=student._id) }}"
+    style="display:inline;"
+    onsubmit="return confirm('Are you sure you want to delete this student?');"
+>
+    <button
+        type="submit"
+        class="btn btn-sm btn-outline-danger"
+    >
+        Delete
+    </button>
+</form>
+                                        </td>
+
+                                    </tr>
+
+                                    {% else %}
+
+                                    <tr>
+
+                                        <td colspan="8" class="text-center text-muted py-4">
+
+                                            No students found.
+
+                                        </td>
+
+                                    </tr>
+
+                                    {% endfor %}
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+{% endblock %}

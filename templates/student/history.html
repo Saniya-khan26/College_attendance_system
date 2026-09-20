@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}
+Attendance History
+{% endblock %}
+
+{% block content %}
+    <style>
+
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .summary-card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .table th,
+        .table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .badge {
+            padding: 7px 10px;
+            font-size: 0.85rem;
+        }
+
+    </style>
+
+<body>
+
+<div class="container-fluid mt-4 px-4">
+
+    <!-- ============================= -->
+    <!-- HEADER -->
+    <!-- ============================= -->
+
+    <div class="d-flex justify-content-between
+                align-items-center mb-4">
+
+        <div>
+
+            <h2>
+                📜 Attendance History
+            </h2>
+
+            <p class="text-muted mb-0">
+
+                Complete daily attendance history
+
+            </p>
+
+        </div>
+
+
+        <a href="{{ url_for('student_dashboard') }}"
+           class="btn btn-secondary">
+
+            ← Dashboard
+
+        </a>
+
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- STUDENT INFORMATION -->
+    <!-- ============================= -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <h5>
+                👨‍🎓 {{ student.name }}
+            </h5>
+
+            <p class="text-muted mb-0">
+
+                Student ID:
+                <strong>{{ student.student_id }}</strong>
+
+                &nbsp; | &nbsp;
+
+                Roll No:
+                <strong>{{ student.roll_no }}</strong>
+
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- SUMMARY -->
+    <!-- ============================= -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+
+            <div class="card summary-card shadow-sm">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Total Days
+                    </h6>
+
+                    <h2 class="fw-bold">
+                        {{ total_days }}
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card summary-card shadow-sm">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Present
+                    </h6>
+
+                    <h2 class="text-success fw-bold">
+                        {{ present_days }}
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card summary-card shadow-sm">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Absent
+                    </h6>
+
+                    <h2 class="text-danger fw-bold">
+                        {{ absent_days }}
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card summary-card shadow-sm">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Attendance %
+                    </h6>
+
+                    <h2 class="fw-bold">
+                        {{ attendance_percentage }}%
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- ATTENDANCE TABLE -->
+    <!-- ============================= -->
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <h5 class="mb-3">
+                📅 Daily Attendance
+            </h5>
+
+
+            {% if attendance_records %}
+
+                <div class="table-responsive">
+
+                    <table
+                        class="table table-bordered
+                               table-hover text-center">
+
+                        <thead class="table-dark">
+
+                            <tr>
+
+                                <th>Date</th>
+
+                                <th>Noon</th>
+
+                                <th>Afternoon</th>
+
+                                <th>Final Result</th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for record in attendance_records %}
+
+                            <tr>
+
+                                <!-- Date -->
+
+                                <td>
+                                    <strong>
+                                        {{ record.date }}
+                                    </strong>
+                                </td>
+
+
+                                <!-- Noon -->
+
+                                <td>
+
+                                    {% if record.noon == "Present" %}
+
+                                        <span class="badge bg-success">
+                                            Present
+                                        </span>
+
+                                    {% elif record.noon == "Absent" %}
+
+                                        <span class="badge bg-danger">
+                                            Absent
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge bg-secondary">
+                                            Not Marked
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <!-- Afternoon -->
+
+                                <td>
+
+                                    {% if record.afternoon == "Present" %}
+
+                                        <span class="badge bg-success">
+                                            Present
+                                        </span>
+
+                                    {% elif record.afternoon == "Absent" %}
+
+                                        <span class="badge bg-danger">
+                                            Absent
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge bg-secondary">
+                                            Not Marked
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <!-- Final Result -->
+
+                                <td>
+
+                                    {% if record.attendance_type == "Present" %}
+
+                                        <span class="badge bg-success">
+                                            ✅ Present
+                                        </span>
+
+                                    {% elif record.attendance_type == "Late Arrival" %}
+
+                                        <span class="badge bg-primary">
+                                            🕐 Late Arrival
+                                        </span>
+
+                                    {% elif record.attendance_type == "Left Midway" %}
+
+                                        <span class="badge bg-warning text-dark">
+                                            ⚠️ Left Midway
+                                        </span>
+
+                                    {% elif record.attendance_type == "Absent Both Sessions" %}
+
+                                        <span class="badge bg-danger">
+                                            ❌ Absent
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge bg-secondary">
+                                            Waiting for Recheck
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="alert alert-info mb-0">
+
+                    No attendance history found.
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+
+{%endblock%}

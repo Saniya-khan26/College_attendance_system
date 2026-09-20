@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}
+Admin Reports
+{% endblock %}
+
+{% block content %}
+
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .summary-card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .table th,
+        .table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .badge {
+            padding: 7px 10px;
+            font-size: 0.85rem;
+        }
+    </style>
+
+<body>
+
+<div class="container-fluid mt-4 px-4">
+
+    <!-- ============================= -->
+    <!-- PAGE HEADER -->
+    <!-- ============================= -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2>
+                📊 Attendance Reports
+            </h2>
+
+            <p class="text-muted mb-0">
+                Student-wise daily attendance report
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('admin_dashboard') }}"
+            class="btn btn-secondary"
+        >
+            ← Dashboard
+        </a>
+
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- SUMMARY CARDS -->
+    <!-- ============================= -->
+
+    <div class="row g-3 mb-4">
+
+        <!-- Total Daily Records -->
+
+        <div class="col-md-3">
+
+            <div class="card summary-card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Total Daily Records
+                    </h6>
+
+                    <h2 class="fw-bold">
+                        {{ total_records }}
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Present -->
+
+        <div class="col-md-3">
+
+            <div class="card summary-card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Present
+                    </h6>
+
+                    <h2 class="text-success fw-bold">
+                        {{ present_count }}
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Absent -->
+
+        <div class="col-md-3">
+
+            <div class="card summary-card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Absent
+                    </h6>
+
+                    <h2 class="text-danger fw-bold">
+                        {{ absent_count }}
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Percentage -->
+
+        <div class="col-md-3">
+
+            <div class="card summary-card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Overall Attendance
+                    </h6>
+
+                    <h2 class="fw-bold">
+                        {{ attendance_percentage }}%
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- STUDENT-WISE REPORT -->
+    <!-- ============================= -->
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="mb-0">
+                    👨‍🎓 Student-wise Attendance
+                </h5>
+
+                <span class="text-muted">
+                    {{ student_report|length }} students
+                </span>
+
+            </div>
+
+
+            {% if student_report %}
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover text-center">
+
+                        <thead class="table-dark">
+
+                            <tr>
+
+                                <th>Roll No</th>
+
+                                <th>Student Name</th>
+
+                                <th>Student ID</th>
+
+                                <th>Total Days</th>
+
+                                <th>Present</th>
+
+                                <th>Absent</th>
+
+                                <th>Attendance %</th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for student in student_report %}
+
+                            <tr>
+
+                                <!-- Roll Number -->
+
+                                <td>
+
+                                    <strong>
+                                        {{ student.roll_no }}
+                                    </strong>
+
+                                </td>
+
+
+                                <!-- Student Name -->
+
+                                <td>
+                                    {{ student.student_name }}
+                                </td>
+
+
+                                <!-- Student ID -->
+
+                                <td>
+                                    {{ student.student_id }}
+                                </td>
+
+
+                                <!-- Total -->
+
+                                <td>
+                                    {{ student.total }}
+                                </td>
+
+
+                                <!-- Present -->
+
+                                <td>
+
+                                    <span class="badge bg-success">
+
+                                        {{ student.present }}
+
+                                    </span>
+
+                                </td>
+
+
+                                <!-- Absent -->
+
+                                <td>
+
+                                    <span class="badge bg-danger">
+
+                                        {{ student.absent }}
+
+                                    </span>
+
+                                </td>
+
+
+                                <!-- Percentage -->
+
+                                <td>
+
+                                    {% if student.percentage >= 75 %}
+
+                                        <span class="badge bg-success">
+
+                                            {{ student.percentage }}%
+
+                                        </span>
+
+                                    {% elif student.percentage >= 50 %}
+
+                                        <span class="badge bg-warning text-dark">
+
+                                            {{ student.percentage }}%
+
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge bg-danger">
+
+                                            {{ student.percentage }}%
+
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="alert alert-info mb-0">
+
+                    No attendance records available.
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Bootstrap JS -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+
+{% endblock %}

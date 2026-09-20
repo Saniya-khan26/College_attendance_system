@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}
+Student Dashboard
+{% endblock %}
+
+{% block content %}
+    <style>
+        body {
+            background: #f5f6fa;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: #212529;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 12px 20px;
+        }
+
+        .sidebar a:hover {
+            background: #343a40;
+        }
+
+        .dashboard-card {
+            border: none;
+            border-radius: 15px;
+        }
+
+        .profile-box {
+            border-radius: 15px;
+        }
+
+        @media (max-width: 767px) {
+            .sidebar {
+                min-height: auto;
+            }
+        }
+    </style>
+
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-0">
+
+                <div class="p-3 text-white">
+                    <h5>🎓 Attendance</h5>
+                </div>
+
+                <a href="{{ url_for('student_dashboard') }}">
+                    🏠 Dashboard
+                </a>
+
+                <a href="{{url_for('student_attendance')}}">
+                    📅 My Attendance
+                </a>
+
+               <a href="{{ url_for('student_history') }}">
+    📜 Attendance History
+</a>
+
+
+                <a href="{{ url_for('student_profile') }}">
+                    👤 My Profile
+                </a>
+
+                <a href="{{ url_for('logout') }}">
+                    🚪 Logout
+                </a>
+
+            </div>
+
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-4">
+
+                <h2>Welcome, Student 👋</h2>
+
+                <p class="text-muted">
+                    College Attendance Management System
+                </p>
+
+
+                <!-- Attendance Cards -->
+                <div class="row g-4 mt-2">
+
+                    <div class="col-12 col-sm-6 col-lg-4">
+
+                        <div class="card dashboard-card shadow-sm p-4">
+
+                            <h6 class="text-muted">
+                                Total Attendance Days
+                            </h6>
+
+                            <h2>{{ total_days }}</h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-12 col-sm-6 col-lg-4">
+
+                        <div class="card dashboard-card shadow-sm p-4">
+
+                            <h6 class="text-muted">
+                                Present Days
+                            </h6>
+
+                            <h2>{{ present_days }}</h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-12 col-sm-6 col-lg-4">
+
+                        <div class="card dashboard-card shadow-sm p-4">
+
+                            <h6 class="text-muted">
+                                Attendance Percentage
+                            </h6>
+
+                            <h2>{{ attendance_percentage }}%</h2>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Profile -->
+                <div class="card profile-box shadow-sm border-0 mt-4 p-4">
+
+                    <h4>👤 My Profile</h4>
+
+                    <hr>
+
+                    <p>
+                        <strong>Student Name:</strong>
+                        {{ student.name }}
+                    </p>
+
+                    <p>
+                        <strong>Student ID:</strong>
+                        {{ student.student_id }}
+                    </p>
+
+                  
+                        <strong>Course:</strong>
+                       {{ student.course }}
+                    </p>
+
+                    <p>
+                        <strong>Semester:</strong>
+                         {{ student.semester }}
+                    </p>
+
+                </div>
+
+
+                <!-- Attendance Information -->
+                <div class="card shadow-sm border-0 mt-4 p-4">
+
+                    <h4>📅 Attendance Information</h4>
+
+                    <p class="text-muted">
+                        Your attendance records will appear here
+                        after faculty marks the daily attendance.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+{%endblock%}

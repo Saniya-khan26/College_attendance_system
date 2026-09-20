@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}
+Admin Dashboard
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .admin-sidebar {
+        min-height: 100vh;
+        background: #212529;
+    }
+
+    .admin-sidebar a {
+        color: white;
+        text-decoration: none;
+        display: block;
+        padding: 12px 20px;
+    }
+
+    .admin-sidebar a:hover {
+        background: #343a40;
+    }
+
+    .dashboard-card {
+        border: none;
+        border-radius: 15px;
+    }
+
+    @media (max-width: 767px) {
+        .admin-sidebar {
+            min-height: auto;
+        }
+
+        .admin-sidebar a {
+            padding: 10px 15px;
+        }
+    }
+</style>
+
+
+<div class="container-fluid">
+
+    <div class="row">
+
+        <!-- ================= SIDEBAR ================= -->
+
+        <div class="col-12 col-md-3 col-lg-2 admin-sidebar p-0">
+
+            <div class="p-3 text-white">
+                <h5>🎓 Attendance</h5>
+            </div>
+
+            <a href="{{ url_for('admin_dashboard') }}">
+                🏠 Dashboard
+            </a>
+
+            <a href="{{ url_for('students') }}">
+                👨‍🎓 Students
+            </a>
+
+            <a href="{{ url_for('faculty') }}">
+                👩‍🏫 Faculty
+            </a>
+
+            <a href="{{ url_for('classes') }}">
+                🏫 Classes
+            </a>
+
+            <a href="{{ url_for('holidays') }}">
+                📅 Holidays
+            </a>
+
+            <a href="{{ url_for('admin_attendance') }}">
+                📝 Attendance
+            </a>
+
+            <a href="{{ url_for('admin_attendance') }}">
+                📊 Attendance Report
+            </a>
+
+            <a href="{{ url_for('admin_reports') }}">
+                📈 Reports
+            </a>
+
+            <a href="{{ url_for('logout') }}">
+                🚪 Logout
+            </a>
+
+        </div>
+
+
+        <!-- ================= MAIN CONTENT ================= -->
+
+        <div class="col-12 col-md-9 col-lg-10 p-3 p-md-4">
+
+            <h2>Welcome, Admin 👋</h2>
+
+            <p class="text-muted">
+                College Attendance Management System
+            </p>
+
+
+            <!-- ================= STATISTICS ================= -->
+
+            <div class="row g-3 g-md-4 mt-2">
+
+                <!-- Students -->
+
+                <div class="col-12 col-sm-6 col-lg-4">
+
+                    <div class="card dashboard-card shadow-sm p-4 h-100">
+
+                        <h6 class="text-muted">
+                            Total Students
+                        </h6>
+
+                        <h2>
+                            {{ total_students }}
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Faculty -->
+
+                <div class="col-12 col-sm-6 col-lg-4">
+
+                    <div class="card dashboard-card shadow-sm p-4 h-100">
+
+                        <h6 class="text-muted">
+                            Total Faculty
+                        </h6>
+
+                        <h2>
+                            {{ total_faculty }}
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Classes -->
+
+                <div class="col-12 col-sm-6 col-lg-4">
+
+                    <div class="card dashboard-card shadow-sm p-4 h-100">
+
+                        <h6 class="text-muted">
+                            Total Classes
+                        </h6>
+
+                        <h2>
+                            {{ total_classes }}
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================= TODAY'S ATTENDANCE ================= -->
+
+            <div class="card shadow-sm border-0 mt-4 p-3 p-md-4">
+
+                <h4>
+                    Today's Attendance
+                </h4>
+
+                <div class="row g-3 mt-2">
+
+                    <!-- Present -->
+
+                    <div class="col-12 col-sm-6">
+
+                        <div class="card border-0 bg-light p-3">
+
+                            <h6 class="text-muted">
+                                Present
+                            </h6>
+
+                            <h3>
+                                {{ present_today }}
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Absent -->
+
+                    <div class="col-12 col-sm-6">
+
+                        <div class="card border-0 bg-light p-3">
+
+                            <h6 class="text-muted">
+                                Absent
+                            </h6>
+
+                            <h3>
+                                {{ absent_today }}
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

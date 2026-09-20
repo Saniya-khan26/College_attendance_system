@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}
+My Profile
+{% endblock %}
+
+{% block content %}-
+    <style>
+        body {
+            background: #f5f6fa;
+        }
+
+        .profile-card {
+            max-width: 700px;
+            margin: 40px auto;
+            border: none;
+            border-radius: 15px;
+        }
+    </style>
+
+
+<body>
+
+<div class="container">
+
+    <div class="card profile-card shadow-sm p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2>👤 My Profile</h2>
+
+            <a href="{{ url_for('student_dashboard') }}"
+               class="btn btn-secondary">
+                ← Dashboard
+            </a>
+
+        </div>
+
+        <table class="table table-bordered">
+
+            <tr>
+                <th>Student ID</th>
+                <td>{{ student.student_id }}</td>
+            </tr>
+
+            <tr>
+                <th>Roll No.</th>
+                <td>{{ student.roll_no }}</td>
+            </tr>
+
+            <tr>
+                <th>Name</th>
+                <td>{{ student.name }}</td>
+            </tr>
+
+            <tr>
+                <th>Email</th>
+                <td>{{ student.email }}</td>
+            </tr>
+
+            <tr>
+                <th>Course</th>
+                <td>{{ student.course }}</td>
+            </tr>
+
+            <tr>
+                <th>Semester</th>
+                <td>{{ student.semester }}</td>
+            </tr>
+
+            <tr>
+                <th>Division</th>
+                <td>{{ student.division }}</td>
+            </tr>
+
+            <tr>
+                <th>Academic Year</th>
+                <td>{{ student.academic_year }}</td>
+            </tr>
+
+            <tr>
+                <th>Status</th>
+                <td>{{ student.status }}</td>
+            </tr>
+
+        </table>
+
+    </div>
+
+</div>
+
+{%endblock%}

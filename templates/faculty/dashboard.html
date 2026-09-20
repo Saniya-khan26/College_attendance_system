@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}
+Faculty Dashboard
+{% endblock %}
+
+{% block content %}
+
+    <style>
+        body {
+            background: #f5f6fa;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: #212529;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 12px 20px;
+        }
+
+        .sidebar a:hover {
+            background: #343a40;
+        }
+
+        .dashboard-card {
+            border: none;
+            border-radius: 15px;
+        }
+
+        @media (max-width: 767px) {
+            .sidebar {
+                min-height: auto;
+            }
+        }
+    </style>
+
+
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+
+
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-0">
+
+                <div class="p-3 text-white">
+                    <h5>🎓 Attendance</h5>
+                </div>
+
+                <a href="{{ url_for('faculty_dashboard') }}">
+                    🏠 Dashboard
+                </a>
+
+                <a href="{{ url_for('faculty_students') }}">
+                    👨‍🎓 My Students
+                </a>
+
+
+                <a href="{{ url_for('daily_attendance') }}">
+                    📝 Daily Attendance
+                </a>
+                <a href="{{ url_for('faculty_history') }}">
+                    📜 Attendance History
+                </a>
+                <a href="{{ url_for('faculty_reports') }}">
+                    📊 Reports
+                </a>
+
+                <a href="{{ url_for('logout') }}">
+                    🚪 Logout
+                </a>
+
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-4">
+
+                <h2>Welcome, Faculty 👋</h2>
+
+                <p class="text-muted">
+                    College Attendance Management System
+                </p>
+
+                <div class="row g-4 mt-2">
+
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card dashboard-card shadow-sm p-4">
+                            <h6 class="text-muted">Total Students</h6>
+                            <h2>{{ total_students }}</h2>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card dashboard-card shadow-sm p-4">
+                            <h6 class="text-muted">Present Today</h6>
+                            <h2>{{ present_today }}</h2>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card dashboard-card shadow-sm p-4">
+                            <h6 class="text-muted">Absent Today</h6>
+                            <h2>{{absent_today}}</h2>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="card shadow-sm border-0 mt-4 p-4">
+
+                    <h4>Today's Attendance</h4>
+
+                    <p class="text-muted">
+                        No attendance has been marked yet.
+                    </p>
+
+                    <div>
+                        <a href="{{ url_for('daily_attendance') }}" class="btn btn-primary">
+                            📝 Mark Today's Attendance
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+{% endblock %}
