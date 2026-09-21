@@ -30,38 +30,36 @@ Admin Reports
 
         <div class="card-body">
 
-            <form
-                method="GET"
-                action="{{ url_for('admin_reports') }}"
-                class="row g-3 align-items-end"
-            >
+            <form method="GET" action="{{ url_for('admin_reports') }}" class="row g-3 align-items-end">
 
                 <!-- Month -->
                 <div class="col-md-4">
 
-                    <label
-                        for="month"
-                        class="form-label fw-semibold"
-                    >
+                    <label for="month" class="form-label fw-semibold">
                         Select Month
                     </label>
 
-                    <select
-                        name="month"
-                        id="month"
-                        class="form-select"
-                    >
+                    <select name="month" id="month" class="form-select">
+                        {% set months = [
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December"
+                        ] %}
 
                         {% for month_number in range(1, 13) %}
 
-                            <option
-                                value="{{ month_number }}"
-                                {% if selected_month == month_number %}
-                                    selected
-                                {% endif %}
-                            >
-                                {{ month_number }}
-                            </option>
+                        <option value="{{ month_number }}" {% if selected_month==month_number %} selected {% endif %}>
+                            {{ months[month_number - 1] }}
+                        </option>
 
                         {% endfor %}
 
@@ -73,44 +71,39 @@ Admin Reports
                 <!-- Year -->
                 <div class="col-md-4">
 
-                    <label
-                        for="year"
-                        class="form-label fw-semibold"
-                    >
+                    <label for="year" class="form-label fw-semibold">
                         Select Year
                     </label>
 
-                    <select
-                        name="year"
-                        id="year"
-                        class="form-select"
-                    >
+                    <select name="year" id="year" class="form-select">
 
                         {% for year in range(2024, 2031) %}
 
-                            <option
-                                value="{{ year }}"
-                                {% if selected_year == year %}
-                                    selected
-                                {% endif %}
-                            >
-                                {{ year }}
-                            </option>
+                        <option value="{{ year }}" {% if selected_year==year %} selected {% endif %}>
+                            {{ year }}
+                        </option>
 
                         {% endfor %}
 
                     </select>
 
                 </div>
+                <!-- Student Search -->
+                <div class="col-md-4">
 
+                    <label for="search" class="form-label fw-semibold">
+                        Search Student
+                    </label>
+
+                    <input type="text" name="search" id="search" class="form-control"
+                        placeholder="Student ID, name or roll no" value="{{ search_student }}">
+
+                </div>
 
                 <!-- Search -->
                 <div class="col-md-4">
 
-                    <button
-                        type="submit"
-                        class="btn btn-primary w-100"
-                    >
+                    <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-search"></i>
                         View Attendance
                     </button>
@@ -226,16 +219,9 @@ Admin Reports
 
             </div>
 
-            <div
-                class="progress mt-2"
-                style="height: 10px;"
-            >
+            <div class="progress mt-2" style="height: 10px;">
 
-                <div
-                    class="progress-bar"
-                    role="progressbar"
-                    style="width: {{ attendance_percentage }}%;"
-                >
+                <div class="progress-bar" role="progressbar" style="width: {{ attendance_percentage }}%;">
                 </div>
 
             </div>
@@ -265,128 +251,119 @@ Admin Reports
 
             {% if student_report %}
 
-                <div class="table-responsive">
+            <div class="table-responsive">
 
-                    <table class="table table-bordered table-hover align-middle">
+                <table class="table table-bordered table-hover align-middle">
 
-                        <thead class="table-dark">
+                    <thead class="table-dark">
 
-                            <tr>
+                        <tr>
 
-                                <th>
-                                    Student ID
-                                </th>
+                            <th>
+                                Student ID
+                            </th>
 
-                                <th>
-                                    Student Name
-                                </th>
+                            <th>
+                                Student Name
+                            </th>
 
-                                <th>
-                                    Present
-                                </th>
+                            <th>
+                                Present
+                            </th>
 
-                                <th>
-                                    Late
-                                </th>
+                            <th>
+                                Late
+                            </th>
 
-                                <th>
-                                    Absent
-                                </th>
+                            <th>
+                                Absent
+                            </th>
 
-                                <th>
-                                    Working Days
-                                </th>
+                            <th>
+                                Working Days
+                            </th>
 
-                                <th>
-                                    Attendance %
-                                </th>
+                            <th>
+                                Attendance %
+                            </th>
 
-                            </tr>
+                        </tr>
 
-                        </thead>
+                    </thead>
 
 
-                        <tbody>
+                    <tbody>
 
-                            {% for student in student_report %}
+                        {% for student in student_report %}
 
-                                <tr>
+                        <tr>
 
-                                    <td>
-                                        {{ student.student_id }}
-                                    </td>
+                            <td>
+                                {{ student.student_id }}
+                            </td>
 
-                                    <td class="fw-semibold">
-                                        {{ student.student_name }}
-                                    </td>
+                            <td class="fw-semibold">
+                                {{ student.student_name }}
+                            </td>
 
-                                    <td class="text-success fw-semibold">
-                                        {{ student.present }}
-                                    </td>
+                            <td class="text-success fw-semibold">
+                                {{ student.present }}
+                            </td>
 
-                                    <td class="text-warning fw-semibold">
-                                        {{ student.late }}
-                                    </td>
+                            <td class="text-warning fw-semibold">
+                                {{ student.late }}
+                            </td>
 
-                                    <td class="text-danger fw-semibold">
-                                        {{ student.absent }}
-                                    </td>
+                            <td class="text-danger fw-semibold">
+                                {{ student.absent }}
+                            </td>
 
-                                    <td>
-                                        {{ student.total }}
-                                    </td>
+                            <td>
+                                {{ student.total }}
+                            </td>
 
-                                    <td>
+                            <td>
 
-                                        <strong>
-                                            {{ student.percentage }}%
-                                        </strong>
+                                <strong>
+                                    {{ student.percentage }}%
+                                </strong>
 
-                                        <div
-                                            class="progress mt-1"
-                                            style="height: 6px;"
-                                        >
+                                <div class="progress mt-1" style="height: 6px;">
 
-                                            <div
-                                                class="progress-bar"
-                                                role="progressbar"
-                                                style="width: {{ student.percentage }}%;"
-                                            >
-                                            </div>
+                                    <div class="progress-bar" role="progressbar"
+                                        style="width: {{ student.percentage }}%;">
+                                    </div>
 
-                                        </div>
+                                </div>
 
-                                    </td>
+                            </td>
 
-                                </tr>
+                        </tr>
 
-                            {% endfor %}
+                        {% endfor %}
 
-                        </tbody>
+                    </tbody>
 
-                    </table>
+                </table>
 
-                </div>
+            </div>
 
             {% else %}
 
-                <div class="text-center py-5">
+            <div class="text-center py-5">
 
-                    <i
-                        class="bi bi-calendar-x"
-                        style="font-size: 45px;"
-                    ></i>
+                <i class="bi bi-calendar-x" style="font-size: 45px;"></i>
 
-                    <h5 class="mt-3">
-                        No attendance records found
-                    </h5>
+                <h5 class="mt-3">
+                    No attendance records found
+                </h5>
 
-                    <p class="text-muted">
-                        No attendance has been recorded
-                        for the selected month.
-                    </p>
+                <p class="text-muted">
+                    No attendance has been recorded
+                    for the selected month.
+                </p>
 
-                </div>
+            </div>
 
             {% endif %}
 

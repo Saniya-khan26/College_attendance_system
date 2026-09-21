@@ -1467,6 +1467,10 @@ def admin_reports():
         datetime.now().year,
         type=int
     )
+    search_student = request.args.get(
+    "search",
+    ""
+    ).strip()
 
     # --------------------------------
     # Get all attendance records
@@ -1783,12 +1787,33 @@ def admin_reports():
         )
 
     # --------------------------------
-    # Convert dictionary to list
-    # --------------------------------
+# Convert dictionary to list
+# --------------------------------
+student_report = list(
+    student_report.values()
+)
 
-    student_report = list(
-        student_report.values()
-    )
+# --------------------------------
+# Search student
+# --------------------------------
+
+if search_student:
+
+    search_lower = search_student.lower()
+
+    student_report = [
+        student
+        for student in student_report
+        if search_lower in str(
+            student.get("student_id", "")
+        ).lower()
+        or search_lower in str(
+            student.get("student_name", "")
+        ).lower()
+        or search_lower in str(
+            student.get("roll_no", "")
+        ).lower()
+    ]
 
     # --------------------------------
     # Sort by roll number
@@ -1821,7 +1846,8 @@ def admin_reports():
 
         selected_month=selected_month,
 
-        selected_year=selected_year
+        selected_year=selected_year,
+        search_student=search_student
     )
 @app.route("/student/history")
 def student_history():
