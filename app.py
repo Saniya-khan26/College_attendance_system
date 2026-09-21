@@ -1453,6 +1453,22 @@ def admin_reports():
         return redirect(url_for("login"))
 
     # --------------------------------
+    # Get selected month and year
+    # --------------------------------
+
+    selected_month = request.args.get(
+        "month",
+        datetime.now().month,
+        type=int
+    )
+
+    selected_year = request.args.get(
+        "year",
+        datetime.now().year,
+        type=int
+    )
+
+    # --------------------------------
     # Get all attendance records
     # --------------------------------
 
@@ -1475,30 +1491,99 @@ def admin_reports():
         student_id = record.get("student_id")
         date = record.get("date")
 
-        key = (student_id, date)
+        # --------------------------------
+        # Convert date into datetime
+        # if required
+        # --------------------------------
+
+        record_date = None
+
+        if isinstance(date, datetime):
+
+            record_date = date
+
+        elif isinstance(date, str):
+
+            try:
+                record_date = datetime.strptime(
+                    date,
+                    "%Y-%m-%d"
+                )
+
+            except ValueError:
+
+                try:
+                    record_date = datetime.strptime(
+                        date,
+                        "%d-%m-%Y"
+                    )
+
+                except ValueError:
+                    continue
+
+        # Skip invalid dates
+        if record_date is None:
+            continue
+
+        # --------------------------------
+        # MONTH + YEAR FILTER
+        # --------------------------------
+
+        if (
+            record_date.month != selected_month
+            or record_date.year != selected_year
+        ):
+            continue
+
+        key = (student_id, record_date.strftime("%Y-%m-%d"))
 
         if key not in daily_attendance:
 
             daily_attendance[key] = {
+
                 "student_id": student_id,
-                "student_name": record.get("student_name"),
-                "roll_no": record.get("roll_no"),
-                "date": date,
+
+                "student_name": record.get(
+                    "student_name"
+                ),
+
+                "roll_no": record.get(
+                    "roll_no"
+                ),
+
+                "date": record_date.strftime(
+                    "%Y-%m-%d"
+                ),
+
                 "noon": None,
+
                 "afternoon": None,
+
                 "attendance_type": None
             }
 
+        # --------------------------------
+        # Noon attendance
+        # --------------------------------
+
         if record.get("session") == "noon":
 
-            daily_attendance[key]["noon"] = record.get("status")
+            daily_attendance[key]["noon"] = (
+                record.get("status")
+            )
+
+        # --------------------------------
+        # Afternoon attendance
+        # --------------------------------
 
         elif record.get("session") == "afternoon":
 
-            daily_attendance[key]["afternoon"] = record.get("status")
+            daily_attendance[key]["afternoon"] = (
+                record.get("status")
+            )
 
     # --------------------------------
-    # Determine final result
+    # Determine final daily result
     # --------------------------------
 
     daily_records = []
@@ -1549,13 +1634,16 @@ def admin_reports():
 
     for record in daily_records:
 
-        result = record.get("attendance_type")
+        result = record.get(
+            "attendance_type"
+        )
 
         if result in [
             "Present",
             "Late Arrival",
             "Left Midway"
         ]:
+
             present_count += 1
 
         elif result == "Absent Both Sessions":
@@ -1574,74 +1662,144 @@ def admin_reports():
     )
 
     # --------------------------------
-    # Student-wise report
+    # Student-wise monthly report
     # --------------------------------
 
     student_report = {}
 
     for record in daily_records:
 
-        student_id = record.get("student_id")
+        student_id = record.get(
+            "student_id"
+        )
 
         if student_id not in student_report:
 
             student_report[student_id] = {
+
                 "student_id": student_id,
-                "student_name": record.get("student_name"),
-                "roll_no": record.get("roll_no"),
+
+                "student_name": record.get(
+                    "student_name"
+                ),
+
+                "roll_no": record.get(
+                    "roll_no"
+                ),
+
                 "total": 0,
+
                 "present": 0,
+
+                "late": 0,
+
                 "absent": 0
             }
 
-        result = record.get("attendance_type")
+        result = record.get(
+            "attendance_type"
+        )
 
-        # Only completed/marked days count
-        if result in [
-            "Present",
-            "Late Arrival",
-            "Left Midway",
-            "Absent Both Sessions"
-        ]:
+        # --------------------------------
+        # Present
+        # --------------------------------
 
-            student_report[student_id]["total"] += 1
+        if result == "Present":
 
-        if result in [
-            "Present",
-            "Late Arrival",
-            "Left Midway"
-        ]:
+            student_report[student_id][
+                "present"
+            ] += 1
 
-            student_report[student_id]["present"] += 1
+            student_report[student_id][
+                "total"
+            ] += 1
+
+        # --------------------------------
+        # Late Arrival
+        # --------------------------------
+
+        elif result == "Late Arrival":
+
+            student_report[student_id][
+                "late"
+            ] += 1
+
+            student_report[student_id][
+                "present"
+            ] += 1
+
+            student_report[student_id][
+                "total"
+            ] += 1
+
+        # --------------------------------
+        # Left Midway
+        # --------------------------------
+
+        elif result == "Left Midway":
+
+            student_report[student_id][
+                "present"
+            ] += 1
+
+            student_report[student_id][
+                "total"
+            ] += 1
+
+        # --------------------------------
+        # Absent
+        # --------------------------------
 
         elif result == "Absent Both Sessions":
 
-            student_report[student_id]["absent"] += 1
+            student_report[student_id][
+                "absent"
+            ] += 1
+
+            student_report[student_id][
+                "total"
+            ] += 1
 
     # --------------------------------
-    # Calculate student percentages
+    # Calculate percentage
     # --------------------------------
 
     for student in student_report.values():
 
         total = student["total"]
+
         present = student["present"]
 
         student["percentage"] = (
+
             round(
                 (present / total) * 100,
                 2
             )
+
             if total > 0
+
             else 0
         )
 
+    # --------------------------------
     # Convert dictionary to list
-    student_report = list(student_report.values())
+    # --------------------------------
 
+    student_report = list(
+        student_report.values()
+    )
+
+    # --------------------------------
     # Sort by roll number
+    # --------------------------------
+
     student_report.sort(
-        key=lambda x: x.get("roll_no", 0)
+        key=lambda x: (
+            x.get("roll_no")
+            if x.get("roll_no") is not None
+            else 0
+        )
     )
 
     # --------------------------------
@@ -1659,7 +1817,11 @@ def admin_reports():
 
         attendance_percentage=attendance_percentage,
 
-        student_report=student_report
+        student_report=student_report,
+
+        selected_month=selected_month,
+
+        selected_year=selected_year
     )
 @app.route("/student/history")
 def student_history():
