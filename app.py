@@ -1787,33 +1787,34 @@ def admin_reports():
         )
 
     # --------------------------------
-# Convert dictionary to list
-# --------------------------------
-student_report = list(
-    student_report.values()
-)
+    # Convert dictionary to list
+    # --------------------------------
 
-# --------------------------------
-# Search student
-# --------------------------------
+    student_report = list(
+        student_report.values()
+    )
 
-if search_student:
+    # --------------------------------
+    # Search student
+    # --------------------------------
 
-    search_lower = search_student.lower()
+    if search_student:
 
-    student_report = [
-        student
-        for student in student_report
-        if search_lower in str(
-            student.get("student_id", "")
-        ).lower()
-        or search_lower in str(
-            student.get("student_name", "")
-        ).lower()
-        or search_lower in str(
-            student.get("roll_no", "")
-        ).lower()
-    ]
+        search_lower = search_student.lower()
+
+        student_report = [
+            student
+            for student in student_report
+            if search_lower in str(
+                student.get("student_id", "")
+            ).lower()
+            or search_lower in str(
+                student.get("student_name", "")
+            ).lower()
+            or search_lower in str(
+                student.get("roll_no", "")
+            ).lower()
+        ]
 
     # --------------------------------
     # Sort by roll number
@@ -1847,6 +1848,7 @@ if search_student:
         selected_month=selected_month,
 
         selected_year=selected_year,
+
         search_student=search_student
     )
 @app.route("/student/history")

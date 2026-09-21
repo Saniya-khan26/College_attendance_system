@@ -5,7 +5,20 @@ Admin Reports
 {% endblock %}
 
 {% block content %}
-
+{% set months = [
+"January",
+"February",
+"March",
+"April",
+"May",
+"June",
+"July",
+"August",
+"September",
+"October",
+"November",
+"December"
+] %}
 <div class="container-fluid py-4">
 
     <!-- Page Heading -->
@@ -25,7 +38,7 @@ Admin Reports
     </div>
 
 
-    <!-- Month & Year Filter -->
+    <!-- Month, Year & Student Filter -->
     <div class="card shadow-sm border-0 mb-4">
 
         <div class="card-body">
@@ -33,27 +46,15 @@ Admin Reports
             <form method="GET" action="{{ url_for('admin_reports') }}" class="row g-3 align-items-end">
 
                 <!-- Month -->
-                <div class="col-md-4">
+                <div class="col-md-3">
 
                     <label for="month" class="form-label fw-semibold">
                         Select Month
                     </label>
 
                     <select name="month" id="month" class="form-select">
-                        {% set months = [
-                        "January",
-                        "February",
-                        "March",
-                        "April",
-                        "May",
-                        "June",
-                        "July",
-                        "August",
-                        "September",
-                        "October",
-                        "November",
-                        "December"
-                        ] %}
+
+
 
                         {% for month_number in range(1, 13) %}
 
@@ -69,7 +70,7 @@ Admin Reports
 
 
                 <!-- Year -->
-                <div class="col-md-4">
+                <div class="col-md-3">
 
                     <label for="year" class="form-label fw-semibold">
                         Select Year
@@ -88,20 +89,23 @@ Admin Reports
                     </select>
 
                 </div>
+
+
                 <!-- Student Search -->
-                <div class="col-md-4">
+                <div class="col-md-3">
 
                     <label for="search" class="form-label fw-semibold">
                         Search Student
                     </label>
 
-                    <input type="text" name="search" id="search" class="form-control"
-                        placeholder="Student ID, name or roll no" value="{{ search_student }}">
+                    <input type="text" name="search" id="search" class="form-control" placeholder="ID, name or roll no"
+                        value="{{ search_student }}">
 
                 </div>
 
-                <!-- Search -->
-                <div class="col-md-4">
+
+                <!-- Search Button -->
+                <div class="col-md-3">
 
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-search"></i>
@@ -125,7 +129,7 @@ Admin Reports
         Showing attendance for:
 
         <strong>
-            {{ selected_month }}/{{ selected_year }}
+            {{ months[selected_month - 1] }} {{ selected_year }}
         </strong>
 
     </div>
@@ -221,7 +225,7 @@ Admin Reports
 
             <div class="progress mt-2" style="height: 10px;">
 
-                <div class="progress-bar" role="progressbar" style="width: {{ attendance_percentage }}%;">
+                <div class="progress-bar" role="progressbar" data-width="{{attendance_percentage}}%">
                 </div>
 
             </div>
@@ -331,7 +335,7 @@ Admin Reports
                                 <div class="progress mt-1" style="height: 6px;">
 
                                     <div class="progress-bar" role="progressbar"
-                                        style="width: {{ student.percentage }}%;">
+                                        data-width="{{ student.percentage }}%">
                                     </div>
 
                                 </div>
@@ -374,3 +378,8 @@ Admin Reports
 </div>
 
 {% endblock %}
+<script>
+document.querySelectorAll("[data-width]").forEach(function (bar) {
+    bar.style.width = bar.dataset.width + "%";
+});
+</script>
