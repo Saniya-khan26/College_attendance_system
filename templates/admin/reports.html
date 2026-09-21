@@ -6,82 +6,155 @@ Admin Reports
 
 {% block content %}
 
+<div class="container-fluid py-4">
 
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-
-        .summary-card {
-            border: none;
-            border-radius: 12px;
-        }
-
-        .table th,
-        .table td {
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .badge {
-            padding: 7px 10px;
-            font-size: 0.85rem;
-        }
-    </style>
-
-<body>
-
-<div class="container-fluid mt-4 px-4">
-
-    <!-- ============================= -->
-    <!-- PAGE HEADER -->
-    <!-- ============================= -->
-
+    <!-- Page Heading -->
     <div class="d-flex justify-content-between align-items-center mb-4">
 
         <div>
-
-            <h2>
-                📊 Attendance Reports
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-bar-chart-line"></i>
+                Monthly Attendance Report
             </h2>
 
             <p class="text-muted mb-0">
-                Student-wise daily attendance report
+                View student attendance month-wise
             </p>
-
         </div>
-
-        <a
-            href="{{ url_for('admin_dashboard') }}"
-            class="btn btn-secondary"
-        >
-            ← Dashboard
-        </a>
 
     </div>
 
 
-    <!-- ============================= -->
-    <!-- SUMMARY CARDS -->
-    <!-- ============================= -->
+    <!-- Month & Year Filter -->
+    <div class="card shadow-sm border-0 mb-4">
 
+        <div class="card-body">
+
+            <form
+                method="GET"
+                action="{{ url_for('admin_reports') }}"
+                class="row g-3 align-items-end"
+            >
+
+                <!-- Month -->
+                <div class="col-md-4">
+
+                    <label
+                        for="month"
+                        class="form-label fw-semibold"
+                    >
+                        Select Month
+                    </label>
+
+                    <select
+                        name="month"
+                        id="month"
+                        class="form-select"
+                    >
+
+                        {% for month_number in range(1, 13) %}
+
+                            <option
+                                value="{{ month_number }}"
+                                {% if selected_month == month_number %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ month_number }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Year -->
+                <div class="col-md-4">
+
+                    <label
+                        for="year"
+                        class="form-label fw-semibold"
+                    >
+                        Select Year
+                    </label>
+
+                    <select
+                        name="year"
+                        id="year"
+                        class="form-select"
+                    >
+
+                        {% for year in range(2024, 2031) %}
+
+                            <option
+                                value="{{ year }}"
+                                {% if selected_year == year %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ year }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Search -->
+                <div class="col-md-4">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100"
+                    >
+                        <i class="bi bi-search"></i>
+                        View Attendance
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- Selected Month -->
+    <div class="alert alert-info shadow-sm">
+
+        <i class="bi bi-calendar3"></i>
+
+        Showing attendance for:
+
+        <strong>
+            {{ selected_month }}/{{ selected_year }}
+        </strong>
+
+    </div>
+
+
+    <!-- Summary Cards -->
     <div class="row g-3 mb-4">
 
-        <!-- Total Daily Records -->
+        <!-- Total Records -->
+        <div class="col-md-4">
 
-        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
 
-            <div class="card summary-card shadow-sm h-100">
-
-                <div class="card-body text-center">
+                <div class="card-body">
 
                     <h6 class="text-muted">
-                        Total Daily Records
+                        Total Attendance Records
                     </h6>
 
-                    <h2 class="fw-bold">
+                    <h3 class="fw-bold">
                         {{ total_records }}
-                    </h2>
+                    </h3>
 
                 </div>
 
@@ -91,20 +164,19 @@ Admin Reports
 
 
         <!-- Present -->
+        <div class="col-md-4">
 
-        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
 
-            <div class="card summary-card shadow-sm h-100">
-
-                <div class="card-body text-center">
+                <div class="card-body">
 
                     <h6 class="text-muted">
-                        Present
+                        Present / Late / Left Midway
                     </h6>
 
-                    <h2 class="text-success fw-bold">
+                    <h3 class="fw-bold text-success">
                         {{ present_count }}
-                    </h2>
+                    </h3>
 
                 </div>
 
@@ -114,43 +186,19 @@ Admin Reports
 
 
         <!-- Absent -->
+        <div class="col-md-4">
 
-        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
 
-            <div class="card summary-card shadow-sm h-100">
-
-                <div class="card-body text-center">
+                <div class="card-body">
 
                     <h6 class="text-muted">
                         Absent
                     </h6>
 
-                    <h2 class="text-danger fw-bold">
+                    <h3 class="fw-bold text-danger">
                         {{ absent_count }}
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- Percentage -->
-
-        <div class="col-md-3">
-
-            <div class="card summary-card shadow-sm h-100">
-
-                <div class="card-body text-center">
-
-                    <h6 class="text-muted">
-                        Overall Attendance
-                    </h6>
-
-                    <h2 class="fw-bold">
-                        {{ attendance_percentage }}%
-                    </h2>
+                    </h3>
 
                 </div>
 
@@ -161,50 +209,97 @@ Admin Reports
     </div>
 
 
-    <!-- ============================= -->
-    <!-- STUDENT-WISE REPORT -->
-    <!-- ============================= -->
-
-    <div class="card shadow-sm">
+    <!-- Overall Percentage -->
+    <div class="card shadow-sm border-0 mb-4">
 
         <div class="card-body">
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between">
 
-                <h5 class="mb-0">
-                    👨‍🎓 Student-wise Attendance
-                </h5>
+                <span class="fw-semibold">
+                    Overall Attendance
+                </span>
 
-                <span class="text-muted">
-                    {{ student_report|length }} students
+                <span class="fw-bold">
+                    {{ attendance_percentage }}%
                 </span>
 
             </div>
 
+            <div
+                class="progress mt-2"
+                style="height: 10px;"
+            >
+
+                <div
+                    class="progress-bar"
+                    role="progressbar"
+                    style="width: {{ attendance_percentage }}%;"
+                >
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Student Monthly Report -->
+    <div class="card shadow-sm border-0">
+
+        <div class="card-header bg-white">
+
+            <h5 class="mb-0 fw-bold">
+
+                <i class="bi bi-people"></i>
+
+                Student-wise Monthly Attendance
+
+            </h5>
+
+        </div>
+
+
+        <div class="card-body">
 
             {% if student_report %}
 
                 <div class="table-responsive">
 
-                    <table class="table table-bordered table-hover text-center">
+                    <table class="table table-bordered table-hover align-middle">
 
                         <thead class="table-dark">
 
                             <tr>
 
-                                <th>Roll No</th>
+                                <th>
+                                    Student ID
+                                </th>
 
-                                <th>Student Name</th>
+                                <th>
+                                    Student Name
+                                </th>
 
-                                <th>Student ID</th>
+                                <th>
+                                    Present
+                                </th>
 
-                                <th>Total Days</th>
+                                <th>
+                                    Late
+                                </th>
 
-                                <th>Present</th>
+                                <th>
+                                    Absent
+                                </th>
 
-                                <th>Absent</th>
+                                <th>
+                                    Working Days
+                                </th>
 
-                                <th>Attendance %</th>
+                                <th>
+                                    Attendance %
+                                </th>
 
                             </tr>
 
@@ -213,103 +308,59 @@ Admin Reports
 
                         <tbody>
 
-                        {% for student in student_report %}
+                            {% for student in student_report %}
 
-                            <tr>
+                                <tr>
 
-                                <!-- Roll Number -->
+                                    <td>
+                                        {{ student.student_id }}
+                                    </td>
 
-                                <td>
+                                    <td class="fw-semibold">
+                                        {{ student.student_name }}
+                                    </td>
 
-                                    <strong>
-                                        {{ student.roll_no }}
-                                    </strong>
-
-                                </td>
-
-
-                                <!-- Student Name -->
-
-                                <td>
-                                    {{ student.student_name }}
-                                </td>
-
-
-                                <!-- Student ID -->
-
-                                <td>
-                                    {{ student.student_id }}
-                                </td>
-
-
-                                <!-- Total -->
-
-                                <td>
-                                    {{ student.total }}
-                                </td>
-
-
-                                <!-- Present -->
-
-                                <td>
-
-                                    <span class="badge bg-success">
-
+                                    <td class="text-success fw-semibold">
                                         {{ student.present }}
+                                    </td>
 
-                                    </span>
+                                    <td class="text-warning fw-semibold">
+                                        {{ student.late }}
+                                    </td>
 
-                                </td>
-
-
-                                <!-- Absent -->
-
-                                <td>
-
-                                    <span class="badge bg-danger">
-
+                                    <td class="text-danger fw-semibold">
                                         {{ student.absent }}
+                                    </td>
 
-                                    </span>
+                                    <td>
+                                        {{ student.total }}
+                                    </td>
 
-                                </td>
+                                    <td>
 
-
-                                <!-- Percentage -->
-
-                                <td>
-
-                                    {% if student.percentage >= 75 %}
-
-                                        <span class="badge bg-success">
-
+                                        <strong>
                                             {{ student.percentage }}%
+                                        </strong>
 
-                                        </span>
+                                        <div
+                                            class="progress mt-1"
+                                            style="height: 6px;"
+                                        >
 
-                                    {% elif student.percentage >= 50 %}
+                                            <div
+                                                class="progress-bar"
+                                                role="progressbar"
+                                                style="width: {{ student.percentage }}%;"
+                                            >
+                                            </div>
 
-                                        <span class="badge bg-warning text-dark">
+                                        </div>
 
-                                            {{ student.percentage }}%
+                                    </td>
 
-                                        </span>
+                                </tr>
 
-                                    {% else %}
-
-                                        <span class="badge bg-danger">
-
-                                            {{ student.percentage }}%
-
-                                        </span>
-
-                                    {% endif %}
-
-                                </td>
-
-                            </tr>
-
-                        {% endfor %}
+                            {% endfor %}
 
                         </tbody>
 
@@ -319,9 +370,21 @@ Admin Reports
 
             {% else %}
 
-                <div class="alert alert-info mb-0">
+                <div class="text-center py-5">
 
-                    No attendance records available.
+                    <i
+                        class="bi bi-calendar-x"
+                        style="font-size: 45px;"
+                    ></i>
+
+                    <h5 class="mt-3">
+                        No attendance records found
+                    </h5>
+
+                    <p class="text-muted">
+                        No attendance has been recorded
+                        for the selected month.
+                    </p>
 
                 </div>
 
@@ -332,12 +395,5 @@ Admin Reports
     </div>
 
 </div>
-
-
-<!-- Bootstrap JS -->
-
-<script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-</script>
 
 {% endblock %}
