@@ -104,15 +104,21 @@ Admin Reports
                 </div>
 
 
-                <!-- Search Button -->
-                <div class="col-md-3">
+    <!-- Search & Excel Buttons -->
+<div class="col-md-3">
+    <button type="submit" class="btn btn-primary w-100 mb-2">
+        <i class="bi bi-search"></i>
+        View Attendance
+    </button>
 
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i>
-                        View Attendance
-                    </button>
-
-                </div>
+    <a
+        href="{{ url_for('admin_reports_download', month=selected_month, year=selected_year) }}"
+        class="btn btn-success w-100"
+    >
+        <i class="bi bi-file-earmark-excel"></i>
+        Download Excel
+    </a>
+</div>
 
             </form>
 

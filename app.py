@@ -6,6 +6,9 @@ import os
 
 from db import db
 from bson.objectid import ObjectId
+from io import BytesIO
+from flask import send_file
+from openpyxl import Workbook
 load_dotenv()
 
 app = Flask(__name__)
@@ -1851,6 +1854,193 @@ def admin_reports():
 
         search_student=search_student
     )
+@app.route("/admin/reports/download")
+def admin_reports_download():
+    if session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    selected_month = request.args.get(
+        "month",
+        datetime.now().month,
+        type=int
+    )
+
+    selected_year = request.args.get(
+        "year",
+        datetime.now().year,
+        type=int
+    )
+
+    # Get all attendance records
+    attendance_records = list(db.attendance.find())
+
+    # Get students
+    students = list(db.students.find())
+
+    student_report = {}
+
+    for student in students:
+        student_id = student.get("student_id")
+
+        student_report[student_id] = {
+            "student_id": student_id,
+            "student_name": student.get("name", ""),
+            "present": 0,
+            "late": 0,
+            "absent": 0,
+            "working_days": 0
+        }
+
+    # Group attendance by student and date
+    daily_attendance = {}
+
+    for record in attendance_records:
+        student_id = record.get("student_id")
+
+        if student_id not in student_report:
+            continue
+
+        attendance_date = record.get("date")
+
+        if not attendance_date:
+            continue
+
+        try:
+            if isinstance(attendance_date, datetime):
+                record_date = attendance_date
+            else:
+                record_date = datetime.strptime(
+                    str(attendance_date)[:10],
+                    "%Y-%m-%d"
+                )
+        except:
+            continue
+
+        # Only selected month and year
+        if (
+            record_date.month != selected_month
+            or record_date.year != selected_year
+        ):
+            continue
+
+        key = (student_id, record_date.strftime("%Y-%m-%d"))
+
+        if key not in daily_attendance:
+            daily_attendance[key] = {
+                "noon": None,
+                "afternoon": None
+            }
+
+        session_name = str(
+            record.get("session", "")
+        ).lower()
+
+        status = record.get("status")
+
+        if "noon" in session_name:
+            daily_attendance[key]["noon"] = status
+
+        elif "afternoon" in session_name:
+            daily_attendance[key]["afternoon"] = status
+
+    # Calculate monthly summary
+    for (student_id, date), sessions in daily_attendance.items():
+
+        noon = sessions["noon"]
+        afternoon = sessions["afternoon"]
+
+        student_report[student_id]["working_days"] += 1
+
+        if noon == "Present" and afternoon == "Present":
+            student_report[student_id]["present"] += 1
+
+        elif noon == "Absent" and afternoon == "Present":
+            student_report[student_id]["late"] += 1
+
+        elif noon == "Present" and afternoon == "Absent":
+            student_report[student_id]["present"] += 1
+
+        elif noon == "Absent" and afternoon == "Absent":
+            student_report[student_id]["absent"] += 1
+
+        elif noon == "Present" and afternoon is None:
+            student_report[student_id]["present"] += 1
+
+        elif noon == "Absent" and afternoon is None:
+            student_report[student_id]["absent"] += 1
+
+    # Create Excel workbook
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Monthly Summary"
+
+    # Headers
+    headers = [
+        "Student ID",
+        "Student Name",
+        "Present",
+        "Late",
+        "Absent",
+        "Working Days",
+        "Attendance %"
+    ]
+
+    worksheet.append(headers)
+
+    # Add student data
+    for student in student_report.values():
+
+        working_days = student["working_days"]
+
+        attended_days = (
+            student["present"] +
+            student["late"]
+        )
+
+        if working_days > 0:
+            percentage = (
+                attended_days / working_days
+            ) * 100
+        else:
+            percentage = 0
+
+        worksheet.append([
+            student["student_id"],
+            student["student_name"],
+            student["present"],
+            student["late"],
+            student["absent"],
+            working_days,
+            round(percentage, 2)
+        ])
+
+    # Adjust column widths
+    worksheet.column_dimensions["A"].width = 15
+    worksheet.column_dimensions["B"].width = 25
+    worksheet.column_dimensions["C"].width = 12
+    worksheet.column_dimensions["D"].width = 12
+    worksheet.column_dimensions["E"].width = 12
+    worksheet.column_dimensions["F"].width = 15
+    worksheet.column_dimensions["G"].width = 15
+
+    # Send Excel file
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=(
+            f"Monthly_Attendance_"
+            f"{selected_year}_{selected_month:02d}.xlsx"
+        ),
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+
 @app.route("/student/history")
 def student_history():
 
