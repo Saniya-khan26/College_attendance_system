@@ -5,32 +5,32 @@ Daily Attendance
 {% endblock %}
 
 {% block content %}
-    <style>
-        body {
-            background: #f5f7fb;
-            font-family: Arial, sans-serif;
-        }
+<style>
+    body {
+        background: #f5f7fb;
+        font-family: Arial, sans-serif;
+    }
 
-        .container-box {
-            max-width: 1100px;
-            margin: 40px auto;
-        }
+    .container-box {
+        max-width: 1100px;
+        margin: 40px auto;
+    }
 
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        }
+    .card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
 
-        .table th {
-            background: #212529;
-            color: white;
-        }
+    .table th {
+        background: #212529;
+        color: white;
+    }
 
-        .student-name {
-            font-weight: 600;
-        }
-    </style>
+    .student-name {
+        font-weight: 600;
+    }
+</style>
 
 
 <body>
@@ -41,7 +41,8 @@ Daily Attendance
 
         <div class="card p-4 mb-4">
 
-           <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+            <div
+                class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
 
                 <div>
                     <h2>📝 Daily Attendance</h2>
@@ -125,7 +126,30 @@ Daily Attendance
 
 
                 {% if students %}
+<div class="d-flex flex-wrap gap-2 mb-3">
 
+    <button
+        type="button"
+        class="btn btn-success"
+        id="markAllPresent">
+        ☑ Mark All Present
+    </button>
+
+    <button
+        type="button"
+        class="btn btn-danger"
+        id="markAllAbsent">
+        ☑ Mark All Absent
+    </button>
+
+    <button
+        type="button"
+        class="btn btn-secondary"
+        id="clearAttendance">
+        Clear All
+    </button>
+
+</div>
                 <div class="table-responsive">
 
                     <table class="table table-bordered align-middle">
@@ -194,29 +218,29 @@ Daily Attendance
 
                                     <div class="form-check form-check-inline">
 
-                                        <input class="form-check-input" type="radio"
-                                            name="status_{{ student.student_id }}" value="Present" required>
+                                        <input class="form-check-input attendance-checkbox present-checkbox"
+                                            type="checkbox" name="status_{{ student.student_id }}" value="Present"
+                                            data-student="{{ student.student_id }}">
 
-                                        <label class="form-check-label">
-                                            Present
+                                        <label class="form-check-label text-success fw-semibold">
+                                            ☑ Present
                                         </label>
 
                                     </div>
 
-
                                     <div class="form-check form-check-inline">
 
-                                        <input class="form-check-input" type="radio"
-                                            name="status_{{ student.student_id }}" value="Absent">
+                                        <input class="form-check-input attendance-checkbox absent-checkbox"
+                                            type="checkbox" name="status_{{ student.student_id }}" value="Absent"
+                                            data-student="{{ student.student_id }}">
 
-                                        <label class="form-check-label">
-                                            Absent
+                                        <label class="form-check-label text-danger fw-semibold">
+                                            ☑ Absent
                                         </label>
 
                                     </div>
 
                                 </td>
-
                                 <!-- Comparison -->
                                 <td>
                                     {% set result = comparison_results.get(student.student_id) %}
@@ -380,4 +404,117 @@ Daily Attendance
         </form>
 
     </div>
-{% endblock %}
+    <script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const presentCheckboxes =
+        document.querySelectorAll(".present-checkbox");
+
+    const absentCheckboxes =
+        document.querySelectorAll(".absent-checkbox");
+
+
+    // Present checkbox
+    presentCheckboxes.forEach(function (checkbox) {
+
+        checkbox.addEventListener("change", function () {
+
+            if (this.checked) {
+
+                const studentId =
+                    this.dataset.student;
+
+                const absent =
+                    document.querySelector(
+                        '.absent-checkbox[data-student="' +
+                        studentId +
+                        '"]'
+                    );
+
+                if (absent) {
+                    absent.checked = false;
+                }
+            }
+        });
+
+    });
+
+
+    // Absent checkbox
+    absentCheckboxes.forEach(function (checkbox) {
+
+        checkbox.addEventListener("change", function () {
+
+            if (this.checked) {
+
+                const studentId =
+                    this.dataset.student;
+
+                const present =
+                    document.querySelector(
+                        '.present-checkbox[data-student="' +
+                        studentId +
+                        '"]'
+                    );
+
+                if (present) {
+                    present.checked = false;
+                }
+            }
+        });
+
+    });
+
+
+    // Mark all Present
+    document
+        .getElementById("markAllPresent")
+        .addEventListener("click", function () {
+
+            presentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+
+            absentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+        });
+
+
+    // Mark all Absent
+    document
+        .getElementById("markAllAbsent")
+        .addEventListener("click", function () {
+
+            absentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+
+            presentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+        });
+
+
+    // Clear all
+    document
+        .getElementById("clearAttendance")
+        .addEventListener("click", function () {
+
+            presentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+            absentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+        });
+
+});
+
+</script>
+    {% endblock %}
