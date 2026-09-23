@@ -598,6 +598,124 @@ def faculty():
         faculty_list=faculty_list,
         search=search
     )
+@app.route("/admin/faculty/edit/<faculty_id>", methods=["GET", "POST"])
+def edit_faculty(faculty_id):
+
+    if session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    faculty_member = db.faculty.find_one({
+        "faculty_id": faculty_id
+    })
+
+    if not faculty_member:
+        return redirect(url_for("faculty"))
+
+    classes_list = list(
+        db.classes.find({
+            "status": "active"
+        }).sort("course", 1)
+    )
+
+    user = db.users.find_one({
+        "faculty_id": faculty_id,
+        "role": "faculty"
+    })
+
+    if request.method == "POST":
+
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        department = request.form.get("department", "").strip()
+        designation = request.form.get("designation", "").strip()
+        assigned_class = request.form.get("assigned_class", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        status = request.form.get("status", "active")
+
+        if not name or not assigned_class or not username:
+            return render_template(
+                "admin/edit_faculty.html",
+                faculty=faculty_member,
+                classes=classes_list,
+                username=username,
+                error="Name, username and assigned class are required."
+            )
+
+        # Check username belongs to another user
+        existing_user = db.users.find_one({
+            "username": username,
+            "faculty_id": {"$ne": faculty_id}
+        })
+
+        if existing_user:
+            return render_template(
+                "admin/edit_faculty.html",
+                faculty=faculty_member,
+                classes=classes_list,
+                username=username,
+                error="This username is already being used."
+            )
+
+        # Check selected class exists
+        selected_class = db.classes.find_one({
+            "class_id": assigned_class,
+            "status": "active"
+        })
+
+        if not selected_class:
+            return render_template(
+                "admin/edit_faculty.html",
+                faculty=faculty_member,
+                classes=classes_list,
+                username=username,
+                error="Selected class does not exist."
+            )
+
+        # Update faculty information
+        db.faculty.update_one(
+            {"faculty_id": faculty_id},
+            {
+                "$set": {
+                    "name": name,
+                    "email": email,
+                    "department": department,
+                    "designation": designation,
+                    "assigned_class": assigned_class,
+                    "status": status
+                }
+            }
+        )
+
+        # Update login account
+        user_update = {
+            "username": username,
+            "status": status
+        }
+
+        # Change password only if admin entered a new password
+        if password:
+            user_update["password"] = generate_password_hash(password)
+
+        db.users.update_one(
+            {
+                "faculty_id": faculty_id,
+                "role": "faculty"
+            },
+            {
+                "$set": user_update
+            }
+        )
+
+        return redirect(url_for("faculty"))
+
+    return render_template(
+        "admin/edit_faculty.html",
+        faculty=faculty_member,
+        classes=classes_list,
+        username=user.get("username", "") if user else ""
+    )
+
 @app.route("/admin/faculty/add", methods=["GET", "POST"])
 def add_faculty():
 
