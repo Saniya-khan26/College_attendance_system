@@ -10,3 +10,4 @@ certifi
 dnspython
 blinker==1.9.0
 click==8.5.0
+openpyxl
