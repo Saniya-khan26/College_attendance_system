@@ -18,59 +18,35 @@ Faculty
                 <h5>🎓 Attendance</h5>
             </div>
 
-            <a
-                href="{{ url_for('admin_dashboard') }}"
-                class="d-block text-white text-decoration-none p-3"
-            >
+            <a href="{{ url_for('admin_dashboard') }}" class="d-block text-white text-decoration-none p-3">
                 🏠 Dashboard
             </a>
 
-            <a
-                href="{{ url_for('students') }}"
-                class="d-block text-white text-decoration-none p-3"
-            >
+            <a href="{{ url_for('students') }}" class="d-block text-white text-decoration-none p-3">
                 👨‍🎓 Students
             </a>
 
-            <a
-                href="{{ url_for('faculty') }}"
-                class="d-block text-white text-decoration-none p-3"
-            >
+            <a href="{{ url_for('faculty') }}" class="d-block text-white text-decoration-none p-3">
                 👩‍🏫 Faculty
             </a>
 
-            <a
-                href="#"
-                class="d-block text-white text-decoration-none p-3"
-            >
+            <a href="#" class="d-block text-white text-decoration-none p-3">
                 🏫 Classes
             </a>
 
-            <a
-                href="#"
-                class="d-block text-white text-decoration-none p-3"
-            >
+            <a href="#" class="d-block text-white text-decoration-none p-3">
                 📅 Holidays
             </a>
 
-            <a
-                href="#"
-                class="d-block text-white text-decoration-none p-3"
-            >
+            <a href="#" class="d-block text-white text-decoration-none p-3">
                 📝 Attendance
             </a>
 
-            <a
-                href="#"
-                class="d-block text-white text-decoration-none p-3"
-            >
+            <a href="#" class="d-block text-white text-decoration-none p-3">
                 📊 Reports
             </a>
 
-            <a
-                href="{{ url_for('logout') }}"
-                class="d-block text-white text-decoration-none p-3"
-            >
+            <a href="{{ url_for('logout') }}" class="d-block text-white text-decoration-none p-3">
                 🚪 Logout
             </a>
 
@@ -81,10 +57,8 @@ Faculty
 
         <div class="col-md-9 col-lg-10 p-4">
 
-            <div
-                class="d-flex justify-content-between
-                       align-items-center mb-4"
-            >
+            <div class="d-flex justify-content-between
+                       align-items-center mb-4">
 
                 <div>
 
@@ -96,10 +70,7 @@ Faculty
 
                 </div>
 
-                <a
-                    href="{{ url_for('add_faculty') }}"
-                    class="btn btn-primary"
-                >
+                <a href="{{ url_for('add_faculty') }}" class="btn btn-primary">
                     + Add Faculty
                 </a>
 
@@ -110,25 +81,14 @@ Faculty
 
             <div class="card shadow-sm border-0 p-3 mb-4">
 
-                <form
-                    method="GET"
-                    action="{{ url_for('faculty') }}"
-                >
+                <form method="GET" action="{{ url_for('faculty') }}">
 
                     <div class="input-group">
 
-                        <input
-                            type="text"
-                            name="search"
-                            class="form-control"
-                            placeholder="Search by name, ID or department"
-                            value="{{ search }}"
-                        >
+                        <input type="text" name="search" class="form-control"
+                            placeholder="Search by name, ID or department" value="{{ search }}">
 
-                        <button
-                            class="btn btn-primary"
-                            type="submit"
-                        >
+                        <button class="btn btn-primary" type="submit">
                             🔍 Search
                         </button>
 
@@ -167,7 +127,7 @@ Faculty
 
                             <tbody>
 
-                            {% for member in faculty_list %}
+                                {% for member in faculty_list %}
 
                                 <tr>
 
@@ -195,15 +155,15 @@ Faculty
 
                                         {% if member.status == "active" %}
 
-                                            <span class="badge bg-success">
-                                                Active
-                                            </span>
+                                        <span class="badge bg-success">
+                                            Active
+                                        </span>
 
                                         {% else %}
 
-                                            <span class="badge bg-secondary">
-                                                Inactive
-                                            </span>
+                                        <span class="badge bg-secondary">
+                                            Inactive
+                                        </span>
 
                                         {% endif %}
 
@@ -211,25 +171,20 @@ Faculty
 
                                     <td>
 
-                                        <a
-                                            href="#"
-                                            class="btn btn-sm btn-outline-primary"
-                                        >
-                                            Edit
+                                        <a href="/admin/faculty/edit/{{ member.faculty_id }}"
+                                            class="btn btn-sm btn-primary">
+                                            ✏️ Edit
                                         </a>
 
                                     </td>
 
                                 </tr>
 
-                            {% else %}
+                                {% else %}
 
                                 <tr>
 
-                                    <td
-                                        colspan="7"
-                                        class="text-center text-muted py-4"
-                                    >
+                                    <td colspan="7" class="text-center text-muted py-4">
 
                                         No faculty found.
 
@@ -237,7 +192,7 @@ Faculty
 
                                 </tr>
 
-                            {% endfor %}
+                                {% endfor %}
 
                             </tbody>
 
