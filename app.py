@@ -604,6 +604,12 @@ def add_faculty():
     if session.get("role") != "admin":
         return redirect(url_for("login"))
 
+    classes_list = list(
+        db.classes.find({
+            "status": "active"
+        }).sort("course", 1)
+    )
+
     if request.method == "POST":
 
         faculty_id = request.form.get("faculty_id", "").strip()
@@ -612,17 +618,24 @@ def add_faculty():
         department = request.form.get("department", "").strip()
         designation = request.form.get("designation", "").strip()
 
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        assigned_class = request.form.get("assigned_class", "").strip()
+        status = request.form.get("status", "active")
+
         # Check required fields
         if not all([
             faculty_id,
             name,
-            email,
-            department,
-            designation
+            username,
+            password,
+            assigned_class
         ]):
             return render_template(
                 "admin/add_faculty.html",
-                error="Please fill all fields."
+                classes=classes_list,
+                error="Please fill all required fields."
             )
 
         # Check duplicate Faculty ID
@@ -633,24 +646,61 @@ def add_faculty():
         if existing_faculty:
             return render_template(
                 "admin/add_faculty.html",
+                classes=classes_list,
                 error="Faculty ID already exists."
             )
 
-        # Save faculty
-        faculty_data = {
+        # Check duplicate username
+        existing_user = db.users.find_one({
+            "username": username
+        })
+
+        if existing_user:
+            return render_template(
+                "admin/add_faculty.html",
+                classes=classes_list,
+                error="Username already exists."
+            )
+
+        # Check selected class exists
+        selected_class = db.classes.find_one({
+            "class_id": assigned_class,
+            "status": "active"
+        })
+
+        if not selected_class:
+            return render_template(
+                "admin/add_faculty.html",
+                classes=classes_list,
+                error="Selected class does not exist."
+            )
+
+        # Create faculty record
+        db.faculty.insert_one({
             "faculty_id": faculty_id,
             "name": name,
             "email": email,
             "department": department,
             "designation": designation,
-            "status": "active"
-        }
+            "assigned_class": assigned_class,
+            "status": status
+        })
 
-        db.faculty.insert_one(faculty_data)
+        # Create login account
+        db.users.insert_one({
+            "username": username,
+            "password": generate_password_hash(password),
+            "role": "faculty",
+            "faculty_id": faculty_id,
+            "status": status
+        })
 
         return redirect(url_for("faculty"))
 
-    return render_template("admin/add_faculty.html")
+    return render_template(
+        "admin/add_faculty.html",
+        classes=classes_list
+    )
 @app.route("/admin/classes")
 def classes():
 

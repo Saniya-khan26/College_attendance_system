@@ -6,149 +6,337 @@ Add Faculty
 
 {% block content %}
 
-<body>
+<div class="container-fluid">
 
-<div class="container py-5">
+    <div class="row">
 
-    <div class="row justify-content-center">
+        <!-- Sidebar -->
 
-        <div class="col-12 col-md-8 col-lg-6">
+        <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-0">
 
-            <div class="card shadow border-0">
+            <div class="p-3 text-white">
+                <h5>🎓 Attendance</h5>
+            </div>
 
-                <div class="card-body p-4">
+            <a
+                href="{{ url_for('admin_dashboard') }}"
+                class="d-block text-white text-decoration-none p-3"
+            >
+                🏠 Dashboard
+            </a>
 
+            <a
+                href="{{ url_for('students') }}"
+                class="d-block text-white text-decoration-none p-3"
+            >
+                👨‍🎓 Students
+            </a>
+
+            <a
+                href="{{ url_for('faculty') }}"
+                class="d-block text-white text-decoration-none p-3"
+            >
+                👩‍🏫 Faculty
+            </a>
+
+            <a
+                href="{{ url_for('classes') }}"
+                class="d-block text-white text-decoration-none p-3"
+            >
+                🏫 Classes
+            </a>
+
+            <a
+                href="{{ url_for('holidays') }}"
+                class="d-block text-white text-decoration-none p-3"
+            >
+                📅 Holidays
+            </a>
+
+            <a
+                href="{{ url_for('admin_attendance') }}"
+                class="d-block text-white text-decoration-none p-3"
+            >
+                📝 Attendance
+            </a>
+
+            <a
+                href="{{ url_for('admin_reports') }}"
+                class="d-block text-white text-decoration-none p-3"
+            >
+                📊 Reports
+            </a>
+
+            <a
+                href="{{ url_for('logout') }}"
+                class="d-block text-white text-decoration-none p-3"
+            >
+                🚪 Logout
+            </a>
+
+        </div>
+
+
+        <!-- Main Content -->
+
+        <div class="col-md-9 col-lg-10 p-4">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
                     <h2>👩‍🏫 Add Faculty</h2>
 
                     <p class="text-muted">
-                        Add a faculty member
+                        Create a faculty account and assign a class
                     </p>
+                </div>
 
-                    {% if error %}
+                <a
+                    href="{{ url_for('faculty') }}"
+                    class="btn btn-secondary"
+                >
+                    ← Back
+                </a>
 
-                    <div class="alert alert-danger">
-                        {{ error }}
-                    </div>
+            </div>
 
-                    {% endif %}
 
-                    <form method="POST">
+            <!-- Error Message -->
 
-                        <div class="mb-3">
+            {% if error %}
 
-                            <label class="form-label">
-                                Faculty ID
-                            </label>
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
 
-                            <input
-                                type="text"
-                                name="faculty_id"
-                                class="form-control"
-                                placeholder="FAC001"
-                                required
-                            >
+            {% endif %}
+
+
+            <!-- Add Faculty Form -->
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body p-4">
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('add_faculty') }}"
+                    >
+
+                        <div class="row g-3">
+
+
+                            <!-- Faculty ID -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Faculty ID *
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="faculty_id"
+                                    class="form-control"
+                                    placeholder="Example: FAC104"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- Faculty Name -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Faculty Name *
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="name"
+                                    class="form-control"
+                                    placeholder="Enter faculty name"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- Email -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Email
+                                </label>
+
+                                <input
+                                    type="email"
+                                    name="email"
+                                    class="form-control"
+                                    placeholder="faculty@example.com"
+                                >
+
+                            </div>
+
+
+                            <!-- Department -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Department
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="department"
+                                    class="form-control"
+                                    placeholder="Example: Computer Applications"
+                                >
+
+                            </div>
+
+
+                            <!-- Designation -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Designation
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="designation"
+                                    class="form-control"
+                                    placeholder="Example: Assistant Professor"
+                                >
+
+                            </div>
+
+
+                            <!-- Assigned Class -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Assigned Class *
+                                </label>
+
+                                <select
+                                    name="assigned_class"
+                                    class="form-select"
+                                    required
+                                >
+
+                                    <option value="">
+                                        Select Class
+                                    </option>
+
+                                    {% for class in classes %}
+
+                                    <option value="{{ class.class_id }}">
+
+                                        {{ class.course }}
+                                        - Semester {{ class.semester }}
+                                        - Division {{ class.division }}
+                                        ({{ class.academic_year }})
+
+                                    </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                            </div>
+
+
+                            <!-- Username -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Username *
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="username"
+                                    class="form-control"
+                                    placeholder="Enter login username"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- Password -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Password *
+                                </label>
+
+                                <input
+                                    type="password"
+                                    name="password"
+                                    class="form-control"
+                                    placeholder="Enter password"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- Status -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Status
+                                </label>
+
+                                <select
+                                    name="status"
+                                    class="form-select"
+                                >
+
+                                    <option value="active">
+                                        Active
+                                    </option>
+
+                                    <option value="inactive">
+                                        Inactive
+                                    </option>
+
+                                </select>
+
+                            </div>
 
                         </div>
 
-                        <div class="mb-3">
 
-                            <label class="form-label">
-                                Name
-                            </label>
+                        <!-- Buttons -->
 
-                            <input
-                                type="text"
-                                name="name"
-                                class="form-control"
-                                placeholder="Enter faculty name"
-                                required
-                            >
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Email
-                            </label>
-
-                            <input
-                                type="email"
-                                name="email"
-                                class="form-control"
-                                placeholder="faculty@example.com"
-                                required
-                            >
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Department
-                            </label>
-
-                            <input
-                                type="text"
-                                name="department"
-                                class="form-control"
-                                placeholder="Computer Science"
-                                required
-                            >
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Designation
-                            </label>
-
-                            <select
-                                name="designation"
-                                class="form-select"
-                                required
-                            >
-
-                                <option value="">
-                                    Select Designation
-                                </option>
-
-                                <option value="Professor">
-                                    Professor
-                                </option>
-
-                                <option value="Associate Professor">
-                                    Associate Professor
-                                </option>
-
-                                <option value="Assistant Professor">
-                                    Assistant Professor
-                                </option>
-
-                                <option value="Lecturer">
-                                    Lecturer
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        <div class="d-flex gap-2">
-
-                            <a
-                                href="{{ url_for('faculty') }}"
-                                class="btn btn-secondary"
-                            >
-                                Cancel
-                            </a>
+                        <div class="mt-4">
 
                             <button
                                 type="submit"
-                                class="btn btn-primary"
+                                class="btn btn-success"
                             >
-                                Save Faculty
+                                ✅ Create Faculty Account
                             </button>
+
+                            <a
+                                href="{{ url_for('faculty') }}"
+                                class="btn btn-secondary ms-2"
+                            >
+                                Cancel
+                            </a>
 
                         </div>
 
