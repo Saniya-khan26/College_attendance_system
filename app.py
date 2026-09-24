@@ -1443,6 +1443,7 @@ def admin_attendance():
         absent_count=absent_count,
         attendance_percentage=attendance_percentage
     )
+
 @app.route("/faculty/students")
 def faculty_students():
 
@@ -1745,7 +1746,7 @@ def daily_attendance():
          students=students,
          noon_status=noon_status,
          comparison_results=comparison_results,
-    )    
+    )   
 @app.route("/faculty/history")
 def faculty_history():
 
@@ -1754,16 +1755,208 @@ def faculty_history():
 
     faculty_id = session.get("faculty_id")
 
-    attendance_history = list(
-        db.attendance.find({
-            "faculty_id": faculty_id
-        }).sort("date", -1)
+    # Get logged-in faculty
+    faculty_member = db.faculty.find_one({
+        "faculty_id": faculty_id
+    })
+
+    if not faculty_member:
+        return redirect(url_for("login"))
+
+    # Classes assigned to this faculty
+    assigned_class_ids = faculty_member.get(
+        "assigned_classes",
+        []
+    )
+
+    assigned_classes = list(
+        db.classes.find({
+            "class_id": {"$in": assigned_class_ids},
+            "status": "active"
+        }).sort([
+            ("course", 1),
+            ("semester", 1),
+            ("division", 1)
+        ])
+    )
+
+    # Selected filters
+    selected_class_id = request.args.get(
+        "class_id",
+        ""
+    ).strip()
+
+    selected_date = request.args.get(
+        "date",
+        ""
+    ).strip()
+
+    # Base query
+    query = {
+        "faculty_id": faculty_id
+    }
+
+    # Class filter + security check
+    if selected_class_id:
+
+        if selected_class_id not in assigned_class_ids:
+            return "You are not authorized to access this class.", 403
+
+        query["class_id"] = selected_class_id
+
+    # Date filter
+    if selected_date:
+        query["date"] = selected_date
+
+    # Get attendance records
+    attendance_records = list(
+        db.attendance.find(query)
+    )
+
+    # --------------------------------------------------
+    # Get student information for roll numbers
+    # --------------------------------------------------
+
+    student_ids = list({
+        record.get("student_id")
+        for record in attendance_records
+        if record.get("student_id")
+    })
+
+    students = list(
+        db.students.find({
+            "student_id": {"$in": student_ids}
+        })
+    )
+
+    student_details = {
+        student.get("student_id"): student
+        for student in students
+    }
+
+    # --------------------------------------------------
+    # Combine Noon + Afternoon
+    # One row per student per date
+    # --------------------------------------------------
+
+    daily_attendance = {}
+
+    for record in attendance_records:
+
+        student_id = record.get("student_id")
+        date = record.get("date")
+        key = (student_id, date)
+
+        if key not in daily_attendance:
+
+            student = student_details.get(
+                student_id,
+                {}
+            )
+
+            daily_attendance[key] = {
+                "date": date,
+                "student_id": student_id,
+                "roll_no": student.get(
+                    "roll_no",
+                    record.get("roll_no", "")
+                ),
+                "student_name": student.get(
+                    "name",
+                    record.get("student_name", "")
+                ),
+                "noon": None,
+                "afternoon": None,
+                "attendance_type": None
+            }
+
+        # Noon attendance
+        if record.get("session") == "noon":
+
+            daily_attendance[key]["noon"] = (
+                record.get("status")
+            )
+
+        # Afternoon attendance
+        elif record.get("session") == "afternoon":
+
+            daily_attendance[key]["afternoon"] = (
+                record.get("status")
+            )
+
+    # --------------------------------------------------
+    # Calculate final daily result
+    # --------------------------------------------------
+
+    attendance_history = []
+
+    for record in daily_attendance.values():
+
+        noon = record.get("noon")
+        afternoon = record.get("afternoon")
+
+        if noon == "Present" and afternoon == "Present":
+
+            record["attendance_type"] = "Present"
+
+        elif noon == "Absent" and afternoon == "Present":
+
+            record["attendance_type"] = "Late Arrival"
+
+        elif noon == "Present" and afternoon == "Absent":
+
+            record["attendance_type"] = "Left Midway"
+
+        elif noon == "Absent" and afternoon == "Absent":
+
+            record["attendance_type"] = "Absent Both Sessions"
+
+        elif noon == "Present" and afternoon is None:
+
+            record["attendance_type"] = "Present"
+
+        elif noon == "Absent" and afternoon is None:
+
+            record["attendance_type"] = "Absent"
+
+        else:
+
+            record["attendance_type"] = "Waiting for Recheck"
+
+        attendance_history.append(record)
+
+    # --------------------------------------------------
+    # Sort newest date first, then roll number
+    # --------------------------------------------------
+
+    def safe_roll_no(record):
+
+        roll_no = record.get("roll_no")
+
+        if roll_no is None or roll_no == "":
+            return 999999
+
+        try:
+            return int(roll_no)
+        except (ValueError, TypeError):
+            return 999999
+
+    attendance_history.sort(
+        key=lambda record: (
+            record.get("date") or "",
+            safe_roll_no(record)
+        ),
+        reverse=True
     )
 
     return render_template(
         "faculty/history.html",
-        attendance_history=attendance_history
+        attendance_history=attendance_history,
+        assigned_classes=assigned_classes,
+        selected_class_id=selected_class_id,
+        selected_date=selected_date
     )
+
 @app.route("/faculty/reports")
 def faculty_reports():
 

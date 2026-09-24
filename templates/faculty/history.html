@@ -49,7 +49,93 @@ Attendance history
         </a>
 
     </div>
+<!-- Filters -->
+<div class="card history-card shadow-sm p-4 mb-4">
 
+    <form method="GET" action="{{ url_for('faculty_history') }}">
+
+        <div class="row g-3">
+
+            <!-- Class -->
+            <div class="col-md-5">
+
+                <label class="form-label fw-semibold">
+                    Select Class
+                </label>
+
+                <select
+                    name="class_id"
+                    class="form-select"
+                >
+
+                    <option value="">
+                        All Assigned Classes
+                    </option>
+
+                    {% for class in assigned_classes %}
+
+                    <option
+                        value="{{ class.class_id }}"
+                        {% if selected_class_id == class.class_id %}
+                            selected
+                        {% endif %}
+                    >
+
+                        {{ class.course }}
+                        - Semester {{ class.semester }}
+                        - Division {{ class.division }}
+                        ({{ class.academic_year }})
+
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- Date -->
+            <div class="col-md-4">
+
+                <label class="form-label fw-semibold">
+                    Select Date
+                </label>
+
+                <input
+                    type="date"
+                    name="date"
+                    class="form-control"
+                    value="{{ selected_date }}"
+                >
+
+            </div>
+
+
+            <!-- Buttons -->
+            <div class="col-md-3 d-flex align-items-end gap-2">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary flex-grow-1"
+                >
+                    🔍 Search
+                </button>
+
+                <a
+                    href="{{ url_for('faculty_history') }}"
+                    class="btn btn-secondary"
+                >
+                    Reset
+                </a>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
 
     <!-- History Card -->
     <div class="card history-card shadow-sm p-4">
@@ -58,83 +144,161 @@ Attendance history
 
             <table class="table table-bordered table-hover">
 
-                <thead class="table-dark">
+    <thead class="table-dark">
 
-                    <tr>
-                        <th>Date</th>
-                        <th>Student ID</th>
-                        <th>Roll No.</th>
-                        <th>Student Name</th>
-                        <th>Status</th>
-                    </tr>
+        <tr>
+            <th>Date</th>
+            <th>Roll No.</th>
+            <th>Student Name</th>
+            <th>Student ID</th>
+            <th>Noon</th>
+            <th>Afternoon</th>
+            <th>Final Result</th>
+        </tr>
 
-                </thead>
+    </thead>
 
-                <tbody>
+    <tbody>
 
-                {% if attendance_history %}
+    {% if attendance_history %}
 
-                    {% for record in attendance_history %}
+        {% for record in attendance_history %}
 
-                    <tr>
+        <tr>
 
-                        <td>
-                            {{ record.date }}
-                        </td>
+            <td>
+                {{ record.date }}
+            </td>
 
-                        <td>
-                            {{ record.student_id }}
-                        </td>
+            <td>
+                {{ record.roll_no or "-" }}
+            </td>
 
-                        <td>
-                            {{ record.roll_no }}
-                        </td>
+            <td>
+                {{ record.student_name or "-" }}
+            </td>
 
-                        <td>
-                            {{ record.student_name }}
-                        </td>
+            <td>
+                {{ record.student_id }}
+            </td>
 
-                        <td>
+            <!-- Noon -->
+            <td>
 
-                            {% if record.status == "Present" %}
+                {% if record.noon == "Present" %}
 
-                                <span class="badge badge-present">
-                                    Present
-                                </span>
+                    <span class="badge badge-present">
+                        Present
+                    </span>
 
-                            {% else %}
+                {% elif record.noon == "Absent" %}
 
-                                <span class="badge badge-absent">
-                                    Absent
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
+                    <span class="badge badge-absent">
+                        Absent
+                    </span>
 
                 {% else %}
 
-                    <tr>
-
-                        <td colspan="5"
-                            class="text-center text-muted py-4">
-
-                            No attendance history available.
-
-                        </td>
-
-                    </tr>
+                    <span class="badge bg-secondary">
+                        Not Marked
+                    </span>
 
                 {% endif %}
 
-                </tbody>
+            </td>
 
-            </table>
 
+            <!-- Afternoon -->
+            <td>
+
+                {% if record.afternoon == "Present" %}
+
+                    <span class="badge badge-present">
+                        Present
+                    </span>
+
+                {% elif record.afternoon == "Absent" %}
+
+                    <span class="badge badge-absent">
+                        Absent
+                    </span>
+
+                {% else %}
+
+                    <span class="badge bg-secondary">
+                        Not Marked
+                    </span>
+
+                {% endif %}
+
+            </td>
+
+
+            <!-- Final Result -->
+            <td>
+
+                {% if record.attendance_type == "Present" %}
+
+                    <span class="badge badge-present">
+                        Present
+                    </span>
+
+                {% elif record.attendance_type == "Late Arrival" %}
+
+                    <span class="badge bg-warning text-dark">
+                        Late Arrival
+                    </span>
+
+                {% elif record.attendance_type == "Left Midway" %}
+
+                    <span class="badge bg-warning text-dark">
+                        Left Midway
+                    </span>
+
+                {% elif record.attendance_type == "Absent Both Sessions" %}
+
+                    <span class="badge badge-absent">
+                        Absent
+                    </span>
+
+                {% elif record.attendance_type == "Absent" %}
+
+                    <span class="badge badge-absent">
+                        Absent
+                    </span>
+
+                {% else %}
+
+                    <span class="badge bg-secondary">
+                        Waiting for Recheck
+                    </span>
+
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    {% else %}
+
+        <tr>
+
+            <td colspan="7"
+                class="text-center text-muted py-4">
+
+                No attendance history available.
+
+            </td>
+
+        </tr>
+
+    {% endif %}
+
+    </tbody>
+
+</table>
         </div>
 
     </div>
