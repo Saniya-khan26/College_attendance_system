@@ -5,244 +5,188 @@ Edit Student
 {% endblock %}
 
 {% block content %}
-<body>
 
 <div class="container py-5">
 
-    <div class="row justify-content-center">
+```
+<div class="row justify-content-center">
 
-        <div class="col-12 col-md-8 col-lg-7">
+    <div class="col-12 col-md-8 col-lg-7">
 
-            <div class="card shadow border-0">
+        <div class="card shadow border-0">
 
-                <div class="card-body p-4">
+            <div class="card-body p-4">
 
-                    <h2>✏️ Edit Student</h2>
+                <h2 class="fw-bold">✏️ Edit Student</h2>
 
-                    <p class="text-muted">
-                        Update student information
-                    </p>
+                <p class="text-muted">
+                    Update student information
+                </p>
 
-                    {% if error %}
-                    <div class="alert alert-danger">
-                        {{ error }}
-                    </div>
-                    {% endif %}
 
-                    <form method="POST">
+                {% if error %}
 
-                        <div class="row">
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">
-                                    Student ID
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="student_id"
-                                    class="form-control"
-                                    value="{{ student.student_id }}"
-                                    required
-                                >
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">
-                                    Roll Number
-                                </label>
-
-                                <input
-                                    type="number"
-                                    name="roll_no"
-                                    class="form-control"
-                                    value="{{ student.roll_no }}"
-                                    required
-                                >
-                            </div>
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Student Name
-                            </label>
-
-                            <input
-                                type="text"
-                                name="name"
-                                class="form-control"
-                                value="{{ student.name }}"
-                                required
-                            >
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Email
-                            </label>
-
-                            <input
-                                type="email"
-                                name="email"
-                                class="form-control"
-                                value="{{ student.email }}"
-                                required
-                            >
-
-                        </div>
-
-                        <div class="row">
-
-                            <div class="col-md-6 mb-3">
-
-                                <label class="form-label">
-                                    Course
-                                </label>
-
-                                <select
-                                    name="course"
-                                    class="form-select"
-                                    required
-                                >
-
-                                    <option value="BCA"
-                                        {% if student.course == "BCA" %}selected{% endif %}>
-                                        BCA
-                                    </option>
-
-                                    <option value="BBA"
-                                        {% if student.course == "BBA" %}selected{% endif %}>
-                                        BBA
-                                    </option>
-
-                                    <option value="BCom"
-                                        {% if student.course == "BCom" %}selected{% endif %}>
-                                        BCom
-                                    </option>
-
-                                    <option value="BA"
-                                        {% if student.course == "BA" %}selected{% endif %}>
-                                        BA
-                                    </option>
-
-                                    <option value="BSc"
-                                        {% if student.course == "BSc" %}selected{% endif %}>
-                                        BSc
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-
-                                <label class="form-label">
-                                    Semester
-                                </label>
-
-                                <select
-                                    name="semester"
-                                    class="form-select"
-                                    required
-                                >
-
-                                    {% for i in range(1, 7) %}
-
-                                    <option value="{{ i }}"
-                                        {% if student.semester == i %}selected{% endif %}>
-                                        {{ i }}
-                                    </option>
-
-                                    {% endfor %}
-
-                                </select>
-
-                            </div>
-
-                        </div>
-
-                        <div class="row">
-
-                            <div class="col-md-6 mb-3">
-
-                                <label class="form-label">
-                                    Division
-                                </label>
-
-                                <select
-                                    name="division"
-                                    class="form-select"
-                                    required
-                                >
-
-                                    <option value="A"
-                                        {% if student.division == "A" %}selected{% endif %}>
-                                        A
-                                    </option>
-
-                                    <option value="B"
-                                        {% if student.division == "B" %}selected{% endif %}>
-                                        B
-                                    </option>
-
-                                    <option value="C"
-                                        {% if student.division == "C" %}selected{% endif %}>
-                                        C
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-
-                                <label class="form-label">
-                                    Academic Year
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="academic_year"
-                                    class="form-control"
-                                    value="{{ student.academic_year }}"
-                                    required
-                                >
-
-                            </div>
-
-                        </div>
-
-                        <div class="d-flex gap-2 mt-3">
-
-                            <a
-                                href="{{ url_for('students') }}"
-                                class="btn btn-secondary"
-                            >
-                                Cancel
-                            </a>
-
-                            <button
-                                type="submit"
-                                class="btn btn-primary"
-                            >
-                                Update Student
-                            </button>
-
-                        </div>
-
-                    </form>
-
+                <div class="alert alert-danger">
+                    {{ error }}
                 </div>
+
+                {% endif %}
+
+
+                <form method="POST">
+
+
+                    <!-- Student ID -->
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Student ID
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            value="{{ student.student_id }}"
+                            readonly
+                        >
+
+                        <small class="text-muted">
+                            Student ID is permanent and cannot be changed.
+                        </small>
+
+                    </div>
+
+
+                    <!-- Student Name -->
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Student Name
+                        </label>
+
+                        <input
+                            type="text"
+                            name="name"
+                            class="form-control"
+                            value="{{ student.name }}"
+                            placeholder="Enter student name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Class -->
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Class
+                        </label>
+
+                        <select
+                            name="class_id"
+                            class="form-select"
+                            required
+                        >
+
+                            <option value="">
+                                Select Class
+                            </option>
+
+                            {% for class in classes %}
+
+                            <option
+                                value="{{ class.class_id }}"
+                                {% if student.class_id == class.class_id %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ class.course }}
+                                - Semester {{ class.semester }}
+                                - Division {{ class.division }}
+                                ({{ class.academic_year }})
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                        <small class="text-muted">
+                            Changing the class automatically updates
+                            the student's course, semester, division
+                            and academic year.
+                        </small>
+
+                    </div>
+
+
+                    <!-- Status -->
+                    <div class="mb-4">
+
+                        <label class="form-label fw-semibold">
+                            Status
+                        </label>
+
+                        <select
+                            name="status"
+                            class="form-select"
+                            required
+                        >
+
+                            <option
+                                value="active"
+                                {% if student.status == "active" %}
+                                    selected
+                                {% endif %}
+                            >
+                                Active
+                            </option>
+
+                            <option
+                                value="inactive"
+                                {% if student.status == "inactive" %}
+                                    selected
+                                {% endif %}
+                            >
+                                Inactive
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Buttons -->
+                    <div class="d-flex gap-2">
+
+                        <a
+                            href="{{ url_for('students') }}"
+                            class="btn btn-secondary"
+                        >
+                            Cancel
+                        </a>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Update Student
+                        </button>
+
+                    </div>
+
+                </form>
 
             </div>
 
         </div>
 
     </div>
+
+</div>
+```
 
 </div>
 

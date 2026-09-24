@@ -608,115 +608,301 @@ def add_student():
     if session.get("role") != "admin":
         return redirect(url_for("login"))
 
-    # Get all active classes for dropdown
+    # Get active classes
     classes_list = list(
-        db.classes.find({"status": "active"}).sort("class_id", 1)
+        db.classes.find({
+            "status": "active"
+        }).sort([
+            ("course", 1),
+            ("semester", 1),
+            ("division", 1)
+        ])
     )
 
     if request.method == "POST":
 
-        student_id = request.form.get("student_id", "").strip()
-        roll_no = request.form.get("roll_no", "").strip()
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip()
-        course = request.form.get("course", "")
-        semester = request.form.get("semester", "")
-        division = request.form.get("division", "")
-        academic_year = request.form.get("academic_year", "").strip()
-        class_id = request.form.get("class_id", "").strip()
+        # ---------------------------------------------
+        # Get form data
+        # ---------------------------------------------
 
-        # Check required fields
-        if not all([
-            student_id,
-            roll_no,
-            name,
-            email,
-            course,
-            semester,
-            division,
-            academic_year,
-            class_id
-        ]):
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        class_id = request.form.get(
+            "class_id",
+            ""
+        ).strip()
+
+
+        # ---------------------------------------------
+        # Basic validation
+        # ---------------------------------------------
+
+        if not name or not class_id:
+
             return render_template(
                 "admin/add_student.html",
                 classes=classes_list,
-                error="Please fill all fields."
+                name=name,
+                selected_class_id=class_id,
+                error="Student name and class are required."
             )
 
-        # Check duplicate Student ID
-        existing_student = db.students.find_one({
-            "student_id": student_id
-        })
 
-        if existing_student:
-            return render_template(
-                "admin/add_student.html",
-                classes=classes_list,
-                error="Student ID already exists."
-            )
+        # ---------------------------------------------
+        # Find selected class
+        # ---------------------------------------------
 
-        # Check duplicate username
-        existing_user = db.users.find_one({
-            "username": name
-        })
-
-        if existing_user:
-            return render_template(
-                "admin/add_student.html",
-                classes=classes_list,
-                error="A login account with this student name already exists."
-            )
-
-        # Check selected class
         selected_class = db.classes.find_one({
             "class_id": class_id,
             "status": "active"
         })
 
         if not selected_class:
+
             return render_template(
                 "admin/add_student.html",
                 classes=classes_list,
-                error="Selected class does not exist."
+                name=name,
+                selected_class_id=class_id,
+                error="Selected class is invalid."
             )
 
-        # Create student record
-        student = {
-            "student_id": student_id,
-            "roll_no": int(roll_no),
-            "name": name,
-            "email": email,
-            "course": course,
-            "semester": int(semester),
-            "division": division,
-            "academic_year": academic_year,
 
-            # Class connection
+        # ---------------------------------------------
+        # Get course
+        # ---------------------------------------------
+
+        course = str(
+            selected_class.get(
+                "course",
+                ""
+            )
+        ).strip().upper()
+
+
+        # ---------------------------------------------
+        # Create short course code
+        #
+        # BCA -> BCA
+        # Biotechnology -> BT
+        # BSc -> BSC
+        # ---------------------------------------------
+
+        course_codes = {
+            "BCA": "BCA",
+            "BIOTECHNOLOGY": "BT",
+            "BT": "BT",
+            "BSC": "BSC",
+            "B.SC": "BSC"
+        }
+
+        course_code = course_codes.get(
+            course
+        )
+
+        if not course_code:
+
+            # Fallback:
+            # remove spaces and use first 3 letters
+            course_code = (
+                course
+                .replace(" ", "")
+                .replace(".", "")
+                [:3]
+            )
+
+        if not course_code:
+
+            return render_template(
+                "admin/add_student.html",
+                classes=classes_list,
+                name=name,
+                selected_class_id=class_id,
+                error="Unable to generate course code for this class."
+            )
+
+
+        # ---------------------------------------------
+        # Determine batch year
+        #
+        # Example:
+        # academic_year = 2026-27
+        # batch year     = 26
+        # ---------------------------------------------
+
+        academic_year = str(
+            selected_class.get(
+                "academic_year",
+                ""
+            )
+        ).strip()
+
+        batch_year = ""
+
+        if academic_year:
+
+            first_year = academic_year.split("-")[0]
+
+            if first_year.isdigit():
+
+                batch_year = first_year[-2:]
+
+
+        # Fallback if academic year is missing
+        if not batch_year:
+
+            batch_year = str(
+                datetime.now().year
+            )[-2:]
+
+
+        # ---------------------------------------------
+        # Generate ID prefix
+        #
+        # Example:
+        # 26-BCA
+        # 26-BT
+        # ---------------------------------------------
+
+        id_prefix = (
+            f"{batch_year}-{course_code}"
+        )
+
+
+        # ---------------------------------------------
+        # Find existing students with this prefix
+        # ---------------------------------------------
+
+        existing_students = list(
+            db.students.find({
+                "student_id": {
+                    "$regex": f"^{id_prefix}-\\d+$",
+                    "$options": "i"
+                }
+            })
+        )
+
+
+        # ---------------------------------------------
+        # Find next student number
+        # ---------------------------------------------
+
+        used_numbers = []
+
+        for student in existing_students:
+
+            student_id = str(
+                student.get(
+                    "student_id",
+                    ""
+                )
+            )
+
+            parts = student_id.split("-")
+
+            if len(parts) == 3:
+
+                number_part = parts[-1]
+
+                if number_part.isdigit():
+
+                    used_numbers.append(
+                        int(number_part)
+                    )
+
+
+        if used_numbers:
+
+            next_number = max(
+                used_numbers
+            ) + 1
+
+        else:
+
+            next_number = 1
+
+
+        # ---------------------------------------------
+        # Generate final Student ID
+        # ---------------------------------------------
+
+        student_id = (
+            f"{id_prefix}-{next_number:03d}"
+        )
+
+
+        # ---------------------------------------------
+        # Safety check
+        # ---------------------------------------------
+
+        while db.students.find_one({
+            "student_id": student_id
+        }):
+
+            next_number += 1
+
+            student_id = (
+                f"{id_prefix}-{next_number:03d}"
+            )
+
+
+        # ---------------------------------------------
+        # Insert student
+        # ---------------------------------------------
+
+        student_document = {
+
+            "student_id": student_id,
+
+            "name": name,
+
             "class_id": class_id,
-            "class_name": selected_class.get("class_id"),
+
+            "class_name": class_id,
+
+            "course": selected_class.get(
+                "course"
+            ),
+
+            "semester": selected_class.get(
+                "semester"
+            ),
+
+            "division": selected_class.get(
+                "division"
+            ),
+
+            "academic_year": selected_class.get(
+                "academic_year"
+            ),
 
             "status": "active"
         }
 
-        # Save student
-        db.students.insert_one(student)
 
-        # Automatically create student login
-        student_user = {
-            "username": name,
-            "password": generate_password_hash(roll_no),
-            "role": "student",
-            "student_id": student_id
-        }
+        db.students.insert_one(
+            student_document
+        )
 
-        # Save login account
-        db.users.insert_one(student_user)
 
-        return redirect(url_for("students"))
+        # ---------------------------------------------
+        # Redirect after successful creation
+        # ---------------------------------------------
+
+        return redirect(
+            url_for("students")
+        )
+
 
     return render_template(
         "admin/add_student.html",
-        classes=classes_list
+        classes=classes_list,
+        name="",
+        selected_class_id="",
+        error=None
     )
 @app.route("/admin/students/edit/<student_id>", methods=["GET", "POST"])
 def edit_student(student_id):
@@ -724,37 +910,101 @@ def edit_student(student_id):
     if session.get("role") != "admin":
         return redirect(url_for("login"))
 
+    # Find student
     student = db.students.find_one({
         "_id": ObjectId(student_id)
     })
 
     if not student:
-        return "Student not found", 404
+        return redirect(url_for("students"))
+
+    # Get active classes
+    classes_list = list(
+        db.classes.find({
+            "status": "active"
+        }).sort([
+            ("course", 1),
+            ("semester", 1),
+            ("division", 1)
+        ])
+    )
 
     if request.method == "POST":
 
-        updated_data = {
-            "student_id": request.form.get("student_id").strip(),
-            "roll_no": int(request.form.get("roll_no")),
-            "name": request.form.get("name").strip(),
-            "email": request.form.get("email").strip(),
-            "course": request.form.get("course"),
-            "semester": int(request.form.get("semester")),
-            "division": request.form.get("division"),
-            "academic_year": request.form.get("academic_year").strip()
-        }
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
 
+        class_id = request.form.get(
+            "class_id",
+            ""
+        ).strip()
+
+        status = request.form.get(
+            "status",
+            "active"
+        ).strip()
+
+        # Validation
+        if not name or not class_id:
+
+            return render_template(
+                "admin/edit_student.html",
+                student=student,
+                classes=classes_list,
+                error="Student name and class are required."
+            )
+
+        if status not in ["active", "inactive"]:
+
+            status = "active"
+
+        # Find selected class
+        selected_class = db.classes.find_one({
+            "class_id": class_id,
+            "status": "active"
+        })
+
+        if not selected_class:
+
+            return render_template(
+                "admin/edit_student.html",
+                student=student,
+                classes=classes_list,
+                error="Selected class is invalid."
+            )
+
+        # Update student
         db.students.update_one(
-            {"_id": ObjectId(student_id)},
-            {"$set": updated_data}
+            {
+                "_id": ObjectId(student_id)
+            },
+            {
+                "$set": {
+                    "name": name,
+                    "class_id": class_id,
+                    "class_name": class_id,
+                    "course": selected_class.get("course"),
+                    "semester": selected_class.get("semester"),
+                    "division": selected_class.get("division"),
+                    "academic_year": selected_class.get("academic_year"),
+                    "status": status
+                }
+            }
         )
 
-        return redirect(url_for("students"))
+        return redirect(
+            url_for("students")
+        )
 
     return render_template(
         "admin/edit_student.html",
-        student=student
+        student=student,
+        classes=classes_list,
+        error=None
     )
+
 @app.route("/admin/students/delete/<student_id>", methods=["POST"])
 def delete_student(student_id):
 
