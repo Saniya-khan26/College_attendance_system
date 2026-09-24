@@ -163,86 +163,121 @@ Attendance Report
     </div>
 
 
-    <!-- ============================= -->
-    <!-- SEARCH AND FILTER -->
-    <!-- ============================= -->
+   <!-- ============================= -->
+<!-- SEARCH AND FILTER -->
+<!-- ============================= -->
 
-    <div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4">
 
-        <div class="card-body">
+    <div class="card-body">
 
-            <form method="GET"
-                  action="{{ url_for('admin_attendance') }}">
+        <form method="GET"
+              action="{{ url_for('admin_attendance') }}">
 
-                <div class="row g-3">
+            <div class="row g-3">
 
-                    <!-- Search -->
+                <!-- Class -->
 
-                    <div class="col-md-5">
+                <div class="col-md-4">
 
-                        <label class="form-label fw-semibold">
-                            Search Student
-                        </label>
+                    <label class="form-label fw-semibold">
+                        Select Class
+                    </label>
 
-                        <input
-                            type="text"
-                            name="search"
-                            class="form-control"
-                            placeholder="Name, Student ID or Roll No"
-                            value="{{ search }}"
-                        >
+                    <select
+                        name="class_id"
+                        class="form-select"
+                    >
 
-                    </div>
+                        <option value="">
+                            All Classes
+                        </option>
 
+                        {% for class in classes %}
 
-                    <!-- Date -->
+                            <option
+                                value="{{ class.class_id }}"
+                                {% if selected_class_id == class.class_id %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ class.course }}
+                                - Semester {{ class.semester }}
+                                - Division {{ class.division }}
+                                ({{ class.academic_year }})
+                            </option>
 
-                    <div class="col-md-4">
+                        {% endfor %}
 
-                        <label class="form-label fw-semibold">
-                            Select Date
-                        </label>
-
-                        <input
-                            type="date"
-                            name="date"
-                            class="form-control"
-                            value="{{ date }}"
-                        >
-
-                    </div>
-
-
-                    <!-- Buttons -->
-
-                    <div class="col-md-3 d-flex align-items-end">
-
-                        <button
-                            type="submit"
-                            class="btn btn-primary me-2">
-
-                            🔍 Search
-
-                        </button>
-
-
-                        <a
-                            href="{{ url_for('admin_attendance') }}"
-                            class="btn btn-secondary">
-
-                            Reset
-
-                        </a>
-
-                    </div>
+                    </select>
 
                 </div>
 
-            </form>
 
-        </div>
+                <!-- Search -->
+
+                <div class="col-md-3">
+
+                    <label class="form-label fw-semibold">
+                        Search Student
+                    </label>
+
+                    <input
+                        type="text"
+                        name="search"
+                        class="form-control"
+                        placeholder="Name, Student ID or Roll No"
+                        value="{{ search }}"
+                    >
+
+                </div>
+
+
+                <!-- Date -->
+
+                <div class="col-md-3">
+
+                    <label class="form-label fw-semibold">
+                        Select Date
+                    </label>
+
+                    <input
+                        type="date"
+                        name="date"
+                        class="form-control"
+                        value="{{ date }}"
+                    >
+
+                </div>
+
+
+                <!-- Buttons -->
+
+                <div class="col-md-2 d-flex align-items-end">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary me-2"
+                    >
+                        🔍 Search
+                    </button>
+
+                    <a
+                        href="{{ url_for('admin_attendance') }}"
+                        class="btn btn-secondary"
+                    >
+                        Reset
+                    </a>
+
+                </div>
+
+            </div>
+
+        </form>
 
     </div>
+
+</div>
 
 
     <!-- ============================= -->

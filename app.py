@@ -1210,43 +1210,85 @@ def admin_attendance():
     if session.get("role") != "admin":
         return redirect(url_for("login"))
 
+    # -----------------------------
+    # Filters
+    # -----------------------------
+
     search = request.args.get("search", "").strip()
     selected_date = request.args.get("date", "").strip()
+    selected_class_id = request.args.get("class_id", "").strip()
+
+    # -----------------------------
+    # Get active classes
+    # -----------------------------
+
+    classes_list = list(
+        db.classes.find({
+            "status": "active"
+        }).sort([
+            ("course", 1),
+            ("semester", 1),
+            ("division", 1)
+        ])
+    )
+
+    # -----------------------------
+    # Attendance query
+    # -----------------------------
 
     query = {}
 
     if selected_date:
         query["date"] = selected_date
 
+    if selected_class_id:
+        query["class_id"] = selected_class_id
+
+    # -----------------------------
     # Get attendance records
+    # -----------------------------
+
     attendance_records = list(
         db.attendance.find(query)
     )
 
-    # Search
+    # -----------------------------
+    # Search student
+    # -----------------------------
+
     if search:
 
         search_lower = search.lower()
 
-        attendance_records = [
-            record
-            for record in attendance_records
-            if (
-                search_lower in str(
-                    record.get("student_name", "")
-                ).lower()
-                or
-                search_lower in str(
-                    record.get("student_id", "")
-                ).lower()
-                or
-                search_lower in str(
-                    record.get("roll_no", "")
-                ).lower()
-            )
-        ]
+        filtered_records = []
 
+        for record in attendance_records:
+
+            student_name = str(
+                record.get("student_name", "")
+            ).lower()
+
+            student_id = str(
+                record.get("student_id", "")
+            ).lower()
+
+            roll_no = str(
+                record.get("roll_no", "")
+            ).lower()
+
+            if (
+                search_lower in student_name
+                or search_lower in student_id
+                or search_lower in roll_no
+            ):
+                filtered_records.append(record)
+
+        attendance_records = filtered_records
+
+    # -----------------------------
     # Combine noon + afternoon
+    # -----------------------------
+
     daily_attendance = {}
 
     for record in attendance_records:
@@ -1263,6 +1305,7 @@ def admin_attendance():
                 "student_name": record.get("student_name"),
                 "roll_no": record.get("roll_no"),
                 "date": date,
+                "class_id": record.get("class_id"),
                 "noon": None,
                 "afternoon": None,
                 "attendance_type": None
@@ -1270,13 +1313,20 @@ def admin_attendance():
 
         if record.get("session") == "noon":
 
-            daily_attendance[key]["noon"] = record.get("status")
+            daily_attendance[key]["noon"] = record.get(
+                "status"
+            )
 
         elif record.get("session") == "afternoon":
 
-            daily_attendance[key]["afternoon"] = record.get("status")
+            daily_attendance[key]["afternoon"] = record.get(
+                "status"
+            )
 
-    # Calculate final status
+    # -----------------------------
+    # Calculate final attendance
+    # -----------------------------
+
     daily_records = []
 
     for day in daily_attendance.values():
@@ -1314,7 +1364,10 @@ def admin_attendance():
 
         daily_records.append(day)
 
+    # -----------------------------
     # Safe sorting
+    # -----------------------------
+
     def safe_roll_no(record):
 
         roll_no = record.get("roll_no")
@@ -1336,7 +1389,10 @@ def admin_attendance():
         reverse=True
     )
 
+    # -----------------------------
     # Statistics
+    # -----------------------------
+
     total_records = len(daily_records)
 
     present_count = 0
@@ -1371,12 +1427,17 @@ def admin_attendance():
         else 0
     )
 
-    # IMPORTANT: final return
+    # -----------------------------
+    # Send data to template
+    # -----------------------------
+
     return render_template(
         "admin/attendance.html",
         attendance_records=daily_records,
         search=search,
         date=selected_date,
+        selected_class_id=selected_class_id,
+        classes=classes_list,
         total_records=total_records,
         present_count=present_count,
         absent_count=absent_count,
