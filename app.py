@@ -38,6 +38,12 @@ def login():
             "username": username
         })
 
+        if user and user.get("status", "active") != "active":
+            return render_template(
+                "login.html",
+                error="Your account is inactive. Please contact the administrator."
+                )
+
         if user and check_password_hash(user["password"], password):
 
             session["username"] = user["username"]
@@ -59,13 +65,31 @@ def login():
         )
 
     return render_template("login.html")
-
-
 @app.route("/faculty/dashboard")
 def faculty_dashboard():
 
     if session.get("role") != "faculty":
         return redirect(url_for("login"))
+
+    faculty_id = session.get("faculty_id")
+
+    faculty_member = db.faculty.find_one({
+        "faculty_id": faculty_id
+    })
+
+    if not faculty_member:
+        return redirect(url_for("login"))
+
+    assigned_classes = faculty_member.get("assigned_classes", [])
+
+    classes_list = list(
+        db.classes.find({
+            "class_id": {
+                "$in": assigned_classes
+            },
+            "status": "active"
+        })
+    )
 
     total_students = db.students.count_documents({
         "status": "active"
@@ -73,7 +97,6 @@ def faculty_dashboard():
 
     today = datetime.now().strftime("%Y-%m-%d")
 
-    # Get today's afternoon/final attendance
     final_attendance = list(
         db.attendance.find({
             "date": today,
@@ -81,10 +104,7 @@ def faculty_dashboard():
         })
     )
 
-    # If afternoon attendance is not marked yet,
-    # use noon attendance
     if not final_attendance:
-
         final_attendance = list(
             db.attendance.find({
                 "date": today,
@@ -108,7 +128,207 @@ def faculty_dashboard():
         "faculty/dashboard.html",
         total_students=total_students,
         present_today=present_today,
-        absent_today=absent_today
+        absent_today=absent_today,
+        faculty=faculty_member,
+        assigned_classes=classes_list
+    )
+@app.route("/faculty/attendance/<class_id>", methods=["GET", "POST"])
+def faculty_attendance(class_id):
+
+    # Faculty login check
+    if session.get("role") != "faculty":
+        return redirect(url_for("login"))
+
+    faculty_id = session.get("faculty_id")
+
+    # Find logged-in faculty
+    faculty_member = db.faculty.find_one({
+        "faculty_id": faculty_id
+    })
+
+    if not faculty_member:
+        return redirect(url_for("login"))
+
+    # Get assigned classes
+    assigned_classes = faculty_member.get("assigned_classes", [])
+
+    # SECURITY CHECK
+    if class_id not in assigned_classes:
+        return "You are not authorized to access this class.", 403
+
+    # Find selected class
+    selected_class = db.classes.find_one({
+        "class_id": class_id,
+        "status": "active"
+    })
+
+    if not selected_class:
+        return "Class not found.", 404
+
+    # Get students of selected class
+    students = list(
+        db.students.find({
+            "status": "active",
+            "class_id": class_id
+        }).sort("student_id", 1)
+    )
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # ==================================================
+    # SAVE ATTENDANCE
+    # ==================================================
+
+    if request.method == "POST":
+
+        attendance_date = request.form.get("date", today)
+        session_type = request.form.get("session_type")
+
+        if session_type not in ["noon", "afternoon"]:
+            return render_template(
+                "faculty/attendance.html",
+                students=students,
+                selected_class=selected_class,
+                noon_status={},
+                afternoon_status={},
+                comparison_results={},
+                today=today,
+                today_display=datetime.now().strftime("%d-%m-%Y"),
+                error="Please select an attendance session."
+            )
+
+        saved_count = 0
+
+        for student in students:
+
+            student_id = student.get("student_id")
+
+            status = request.form.get(
+                f"status_{student_id}"
+            )
+
+            # Skip if neither Present nor Absent was selected
+            if status not in ["Present", "Absent"]:
+                continue
+
+            # Prevent duplicate attendance
+            existing_record = db.attendance.find_one({
+                "date": attendance_date,
+                "class_id": class_id,
+                "student_id": student_id,
+                "session": session_type
+            })
+
+            if existing_record:
+
+                db.attendance.update_one(
+                    {
+                        "_id": existing_record["_id"]
+                    },
+                    {
+                        "$set": {
+                            "status": status,
+                            "faculty_id": faculty_id
+                        }
+                    }
+                )
+
+            else:
+
+                db.attendance.insert_one({
+                    "date": attendance_date,
+                    "class_id": class_id,
+                    "student_id": student_id,
+                    "student_name": student.get("name"),
+                    "session": session_type,
+                    "status": status,
+                    "faculty_id": faculty_id
+                })
+
+            saved_count += 1
+
+        return redirect(
+            url_for(
+                "faculty_attendance",
+                class_id=class_id
+            )
+        )
+
+    # ==================================================
+    # LOAD TODAY'S ATTENDANCE
+    # ==================================================
+
+    noon_records = list(
+        db.attendance.find({
+            "date": today,
+            "class_id": class_id,
+            "session": "noon"
+        })
+    )
+
+    afternoon_records = list(
+        db.attendance.find({
+            "date": today,
+            "class_id": class_id,
+            "session": "afternoon"
+        })
+    )
+
+    noon_status = {
+        record.get("student_id"): record.get("status")
+        for record in noon_records
+    }
+
+    afternoon_status = {
+        record.get("student_id"): record.get("status")
+        for record in afternoon_records
+    }
+
+    # ==================================================
+    # COMPARE NOON + AFTERNOON
+    # ==================================================
+
+    comparison_results = {}
+
+    for student in students:
+
+        student_id = student.get("student_id")
+
+        noon = noon_status.get(student_id)
+        afternoon = afternoon_status.get(student_id)
+
+        if noon == "Present" and afternoon == "Present":
+            result = "Present"
+
+        elif noon == "Absent" and afternoon == "Present":
+            result = "Late Arrival"
+
+        elif noon == "Present" and afternoon == "Absent":
+            result = "Left Midway"
+
+        elif noon == "Absent" and afternoon == "Absent":
+            result = "Absent Both Sessions"
+
+        elif noon == "Present" and afternoon is None:
+            result = "Present"
+
+        elif noon == "Absent" and afternoon is None:
+            result = "Absent"
+
+        else:
+            result = None
+
+        comparison_results[student_id] = result
+
+    return render_template(
+        "faculty/attendance.html",
+        students=students,
+        selected_class=selected_class,
+        noon_status=noon_status,
+        afternoon_status=afternoon_status,
+        comparison_results=comparison_results,
+        today=today,
+        today_display=datetime.now().strftime("%d-%m-%Y")
     )
 
 @app.route("/admin/dashboard")
@@ -604,6 +824,7 @@ def edit_faculty(faculty_id):
     if session.get("role") != "admin":
         return redirect(url_for("login"))
 
+    # Find faculty
     faculty_member = db.faculty.find_one({
         "faculty_id": faculty_id
     })
@@ -611,44 +832,56 @@ def edit_faculty(faculty_id):
     if not faculty_member:
         return redirect(url_for("faculty"))
 
+    # Get active classes
     classes_list = list(
         db.classes.find({
             "status": "active"
         }).sort("course", 1)
     )
 
+    # Find existing login account
     user = db.users.find_one({
         "faculty_id": faculty_id,
         "role": "faculty"
     })
 
+    # -----------------------------
+    # POST
+    # -----------------------------
     if request.method == "POST":
 
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
         department = request.form.get("department", "").strip()
         designation = request.form.get("designation", "").strip()
-        assigned_class = request.form.get("assigned_class", "").strip()
+
+        assigned_classes = request.form.getlist("assigned_classes")
+
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
         status = request.form.get("status", "active")
 
-        if not name or not assigned_class or not username:
+        # Required fields
+        if not name or not username or not assigned_classes:
+
             return render_template(
                 "admin/edit_faculty.html",
                 faculty=faculty_member,
                 classes=classes_list,
                 username=username,
-                error="Name, username and assigned class are required."
+                error="Name, username and at least one assigned class are required."
             )
 
-        # Check username belongs to another user
+        # Check whether username belongs to another account
         existing_user = db.users.find_one({
             "username": username,
-            "faculty_id": {"$ne": faculty_id}
+            "faculty_id": {
+                "$ne": faculty_id
+            }
         })
 
         if existing_user:
+
             return render_template(
                 "admin/edit_faculty.html",
                 faculty=faculty_member,
@@ -657,57 +890,102 @@ def edit_faculty(faculty_id):
                 error="This username is already being used."
             )
 
-        # Check selected class exists
-        selected_class = db.classes.find_one({
-            "class_id": assigned_class,
-            "status": "active"
-        })
+        # Validate selected classes
+        selected_classes = list(
+            db.classes.find({
+                "class_id": {
+                    "$in": assigned_classes
+                },
+                "status": "active"
+            })
+        )
 
-        if not selected_class:
+        if len(selected_classes) != len(assigned_classes):
+
             return render_template(
                 "admin/edit_faculty.html",
                 faculty=faculty_member,
                 classes=classes_list,
                 username=username,
-                error="Selected class does not exist."
+                error="One or more selected classes are invalid."
             )
 
+        # --------------------------------
         # Update faculty information
+        # --------------------------------
+
         db.faculty.update_one(
-            {"faculty_id": faculty_id},
+            {
+                "faculty_id": faculty_id
+            },
             {
                 "$set": {
                     "name": name,
                     "email": email,
                     "department": department,
                     "designation": designation,
-                    "assigned_class": assigned_class,
+                    "assigned_classes": assigned_classes,
                     "status": status
                 }
             }
         )
 
-        # Update login account
-        user_update = {
-            "username": username,
-            "status": status
-        }
+        # --------------------------------
+        # Update or create login account
+        # --------------------------------
 
-        # Change password only if admin entered a new password
-        if password:
-            user_update["password"] = generate_password_hash(password)
+        if user:
 
-        db.users.update_one(
-            {
-                "faculty_id": faculty_id,
-                "role": "faculty"
-            },
-            {
-                "$set": user_update
+            user_update = {
+                "username": username,
+                "status": status
             }
-        )
+
+            # Update password only if entered
+            if password:
+
+                user_update["password"] = generate_password_hash(
+                    password
+                )
+
+            db.users.update_one(
+                {
+                    "faculty_id": faculty_id,
+                    "role": "faculty"
+                },
+                {
+                    "$set": user_update
+                }
+            )
+
+        else:
+
+            # No login account exists
+            if not password:
+
+                return render_template(
+                    "admin/edit_faculty.html",
+                    faculty=faculty_member,
+                    classes=classes_list,
+                    username=username,
+                    error="Please enter a password to create the faculty login account."
+                )
+
+            new_user = {
+                "username": username,
+                "password": generate_password_hash(password),
+                "role": "faculty",
+                "faculty_id": faculty_id,
+                "status": status
+            }
+
+            db.users.insert_one(new_user)
 
         return redirect(url_for("faculty"))
+
+    # -----------------------------
+    # GET
+    # -----------------------------
 
     return render_template(
         "admin/edit_faculty.html",
@@ -739,7 +1017,7 @@ def add_faculty():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
-        assigned_class = request.form.get("assigned_class", "").strip()
+        assigned_classes = request.form.getlist("assigned_class")
         status = request.form.get("status", "active")
 
         # Check required fields
@@ -748,7 +1026,7 @@ def add_faculty():
             name,
             username,
             password,
-            assigned_class
+            assigned_classes
         ]):
             return render_template(
                 "admin/add_faculty.html",
@@ -781,12 +1059,21 @@ def add_faculty():
             )
 
         # Check selected class exists
-        selected_class = db.classes.find_one({
-            "class_id": assigned_class,
-            "status": "active"
-        })
+        selected_classes = list(
+            db.classes.find({
+               "class_id": {"$in": assigned_classes},
+               "status": "active"
+            })
+        )
 
-        if not selected_class:
+        if len(selected_classes) != len(assigned_classes):
+            return render_template(
+           "admin/add_faculty.html",
+            classes=classes_list,
+             error="One or more selected classes are invalid."
+        )
+
+        if not selected_classes:
             return render_template(
                 "admin/add_faculty.html",
                 classes=classes_list,
@@ -800,7 +1087,7 @@ def add_faculty():
             "email": email,
             "department": department,
             "designation": designation,
-            "assigned_class": assigned_class,
+            "assigned_classes": assigned_classes,
             "status": status
         })
 

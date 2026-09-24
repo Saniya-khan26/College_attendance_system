@@ -197,43 +197,60 @@ Edit Faculty
 
                             <!-- Assigned Class -->
 
-                            <div class="col-md-6">
+                          <div class="mb-3">
 
-                                <label class="form-label">
-                                    Assigned Class *
-                                </label>
+    <label class="form-label fw-semibold">
+        Assigned Classes
+    </label>
 
-                                <select
-                                    name="assigned_class"
-                                    class="form-select"
-                                    required
-                                >
+    <div class="border rounded p-3">
 
-                                    <option value="">
-                                        Select Class
-                                    </option>
+        {% if classes %}
 
-                                    {% for class in classes %}
+            {% for class in classes %}
 
-                                    <option
-                                        value="{{ class.class_id }}"
-                                        {% if faculty.assigned_class == class.class_id %}
-                                            selected
-                                        {% endif %}
-                                    >
+                <div class="form-check mb-2">
 
-                                        {{ class.course }}
-                                        - Semester {{ class.semester }}
-                                        - Division {{ class.division }}
-                                        ({{ class.academic_year }})
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        name="assigned_classes"
+                        value="{{ class.class_id }}"
+                        id="edit_class_{{ loop.index }}"
+                        {% if class.class_id in faculty.get('assigned_classes', []) %}
+                            checked
+                        {% endif %}
+                    >
 
-                                    </option>
+                    <label
+                        class="form-check-label"
+                        for="edit_class_{{ loop.index }}"
+                    >
+                        <strong>{{ class.course }}</strong>
+                        - Semester {{ class.semester }}
+                        - Division {{ class.division }}
+                        ({{ class.academic_year }})
+                    </label>
 
-                                    {% endfor %}
+                </div>
 
-                                </select>
+            {% endfor %}
 
-                            </div>
+        {% else %}
+
+            <p class="text-muted mb-0">
+                No active classes available.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+    <small class="text-muted">
+        Select one or more classes for this faculty member.
+    </small>
+
+</div>
 
 
                             <!-- Username -->

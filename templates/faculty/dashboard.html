@@ -112,6 +112,66 @@ Faculty Dashboard
 
                 </div>
 
+             <!-- Assigned Classes -->
+<div class="card shadow-sm border-0 mt-4 p-4">
+
+    <h4 class="mb-3">My Assigned Classes</h4>
+
+    <div class="row g-3">
+
+        {% for class in assigned_classes %}
+
+        <div class="col-12 col-md-6 col-lg-4">
+
+            <div class="card h-100 border shadow-sm">
+
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        🎓 {{ class.course }}
+                    </h5>
+
+                    <p class="mb-1">
+                        <strong>Semester:</strong>
+                        {{ class.semester }}
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Division:</strong>
+                        {{ class.division }}
+                    </p>
+
+                    <p class="text-muted">
+                        <strong>Academic Year:</strong>
+                        {{ class.academic_year }}
+                    </p>
+
+                    <a
+                        href="{{ url_for('faculty_attendance', class_id=class.class_id) }}"
+                        class="btn btn-primary w-100"
+                    >
+                        📝 Take Attendance
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% else %}
+
+        <div class="col-12">
+            <div class="alert alert-warning mb-0">
+                No classes have been assigned to you.
+            </div>
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>   
                 <div class="card shadow-sm border-0 mt-4 p-4">
 
                     <h4>Today's Attendance</h4>
