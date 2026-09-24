@@ -1210,10 +1210,6 @@ def admin_attendance():
     if session.get("role") != "admin":
         return redirect(url_for("login"))
 
-    # -----------------------------
-    # Search and date filter
-    # -----------------------------
-
     search = request.args.get("search", "").strip()
     selected_date = request.args.get("date", "").strip()
 
@@ -1222,55 +1218,35 @@ def admin_attendance():
     if selected_date:
         query["date"] = selected_date
 
-    # -----------------------------
     # Get attendance records
-    # -----------------------------
-
     attendance_records = list(
-        db.attendance.find(query).sort([
-            ("date", -1),
-            ("roll_no", 1)
-        ])
+        db.attendance.find(query)
     )
 
-    # -----------------------------
-    # Search by student
-    # -----------------------------
-
+    # Search
     if search:
 
         search_lower = search.lower()
 
-        filtered_records = []
-
-        for record in attendance_records:
-
-            student_name = str(
-                record.get("student_name", "")
-            ).lower()
-
-            student_id = str(
-                record.get("student_id", "")
-            ).lower()
-
-            roll_no = str(
-                record.get("roll_no", "")
-            )
-
+        attendance_records = [
+            record
+            for record in attendance_records
             if (
-                search_lower in student_name
-                or search_lower in student_id
-                or search_lower in roll_no
-            ):
-                filtered_records.append(record)
+                search_lower in str(
+                    record.get("student_name", "")
+                ).lower()
+                or
+                search_lower in str(
+                    record.get("student_id", "")
+                ).lower()
+                or
+                search_lower in str(
+                    record.get("roll_no", "")
+                ).lower()
+            )
+        ]
 
-        attendance_records = filtered_records
-
-    # -----------------------------
     # Combine noon + afternoon
-    # into one record per student/date
-    # -----------------------------
-
     daily_attendance = {}
 
     for record in attendance_records:
@@ -1292,34 +1268,15 @@ def admin_attendance():
                 "attendance_type": None
             }
 
-        # Noon attendance
         if record.get("session") == "noon":
 
-            daily_attendance[key]["noon"] = record.get(
-                "status"
-            )
+            daily_attendance[key]["noon"] = record.get("status")
 
-            if record.get("attendance_type"):
-                daily_attendance[key]["attendance_type"] = (
-                    record.get("attendance_type")
-                )
-
-        # Afternoon attendance
         elif record.get("session") == "afternoon":
 
-            daily_attendance[key]["afternoon"] = record.get(
-                "status"
-            )
+            daily_attendance[key]["afternoon"] = record.get("status")
 
-            if record.get("attendance_type"):
-                daily_attendance[key]["attendance_type"] = (
-                    record.get("attendance_type")
-                )
-
-    # -----------------------------
-    # Calculate final attendance type
-    # -----------------------------
-
+    # Calculate final status
     daily_records = []
 
     for day in daily_attendance.values():
@@ -1327,27 +1284,22 @@ def admin_attendance():
         noon = day.get("noon")
         afternoon = day.get("afternoon")
 
-        # Both sessions present
         if noon == "Present" and afternoon == "Present":
 
             day["attendance_type"] = "Present"
 
-        # Absent at noon, present later
         elif noon == "Absent" and afternoon == "Present":
 
             day["attendance_type"] = "Late Arrival"
 
-        # Present at noon, absent later
         elif noon == "Present" and afternoon == "Absent":
 
             day["attendance_type"] = "Left Midway"
 
-        # Absent in both sessions
         elif noon == "Absent" and afternoon == "Absent":
 
             day["attendance_type"] = "Absent Both Sessions"
 
-        # Only noon attendance marked
         elif noon == "Present" and afternoon is None:
 
             day["attendance_type"] = "Present"
@@ -1362,24 +1314,29 @@ def admin_attendance():
 
         daily_records.append(day)
 
-    # -----------------------------
-    # Sort records
-    # Newest date first
-    # Roll number ascending
-    # -----------------------------
+    # Safe sorting
+    def safe_roll_no(record):
+
+        roll_no = record.get("roll_no")
+
+        if roll_no is None:
+            return 999999
+
+        try:
+            return int(roll_no)
+
+        except (ValueError, TypeError):
+            return 999999
 
     daily_records.sort(
-        key=lambda x: (
-            x.get("date", ""),
-            x.get("roll_no", 0)
+        key=lambda record: (
+            record.get("date") or "",
+            safe_roll_no(record)
         ),
         reverse=True
     )
 
-    # -----------------------------
-    # Calculate statistics
-    # -----------------------------
-
+    # Statistics
     total_records = len(daily_records)
 
     present_count = 0
@@ -1391,21 +1348,17 @@ def admin_attendance():
             "attendance_type"
         )
 
-        # These are counted as attended days
         if attendance_type in [
             "Present",
             "Late Arrival",
             "Left Midway"
         ]:
+
             present_count += 1
 
-        # Completely absent
         elif attendance_type == "Absent Both Sessions":
-            absent_count += 1
 
-    # -----------------------------
-    # Attendance percentage
-    # -----------------------------
+            absent_count += 1
 
     marked_days = present_count + absent_count
 
@@ -1418,25 +1371,15 @@ def admin_attendance():
         else 0
     )
 
-    # -----------------------------
-    # Send data to template
-    # -----------------------------
-
+    # IMPORTANT: final return
     return render_template(
         "admin/attendance.html",
-
         attendance_records=daily_records,
-
         search=search,
-
         date=selected_date,
-
         total_records=total_records,
-
         present_count=present_count,
-
         absent_count=absent_count,
-
         attendance_percentage=attendance_percentage
     )
 @app.route("/faculty/students")
@@ -1911,7 +1854,7 @@ def admin_reports():
         return redirect(url_for("login"))
 
     # --------------------------------
-    # Get selected month and year
+    # Get selected month, year and class
     # --------------------------------
 
     selected_month = request.args.get(
@@ -1925,17 +1868,49 @@ def admin_reports():
         datetime.now().year,
         type=int
     )
+
+    selected_class_id = request.args.get(
+        "class_id",
+        ""
+    ).strip()
+
     search_student = request.args.get(
-    "search",
-    ""
+        "search",
+        ""
     ).strip()
 
     # --------------------------------
-    # Get all attendance records
+    # Get active classes
+    # --------------------------------
+
+    classes_list = list(
+        db.classes.find({
+            "status": "active"
+        }).sort([
+            ("course", 1),
+            ("semester", 1),
+            ("division", 1)
+        ])
+    )
+
+    # --------------------------------
+    # Attendance filter
+    # --------------------------------
+
+    attendance_filter = {}
+
+    if selected_class_id:
+
+        attendance_filter["class_id"] = selected_class_id
+
+    # --------------------------------
+    # Get attendance records
     # --------------------------------
 
     attendance_records = list(
-        db.attendance.find({}).sort([
+        db.attendance.find(
+            attendance_filter
+        ).sort([
             ("date", -1),
             ("roll_no", 1)
         ])
@@ -1955,7 +1930,6 @@ def admin_reports():
 
         # --------------------------------
         # Convert date into datetime
-        # if required
         # --------------------------------
 
         record_date = None
@@ -1967,6 +1941,7 @@ def admin_reports():
         elif isinstance(date, str):
 
             try:
+
                 record_date = datetime.strptime(
                     date,
                     "%Y-%m-%d"
@@ -1975,12 +1950,14 @@ def admin_reports():
             except ValueError:
 
                 try:
+
                     record_date = datetime.strptime(
                         date,
                         "%d-%m-%Y"
                     )
 
                 except ValueError:
+
                     continue
 
         # Skip invalid dates
@@ -1997,7 +1974,10 @@ def admin_reports():
         ):
             continue
 
-        key = (student_id, record_date.strftime("%Y-%m-%d"))
+        key = (
+            student_id,
+            record_date.strftime("%Y-%m-%d")
+        )
 
         if key not in daily_attendance:
 
@@ -2011,6 +1991,10 @@ def admin_reports():
 
                 "roll_no": record.get(
                     "roll_no"
+                ),
+
+                "class_id": record.get(
+                    "class_id"
                 ),
 
                 "date": record_date.strftime(
@@ -2115,11 +2099,14 @@ def admin_reports():
     marked_days = present_count + absent_count
 
     attendance_percentage = (
+
         round(
             (present_count / marked_days) * 100,
             2
         )
+
         if marked_days > 0
+
         else 0
     )
 
@@ -2261,14 +2248,19 @@ def admin_reports():
         search_lower = search_student.lower()
 
         student_report = [
+
             student
+
             for student in student_report
+
             if search_lower in str(
                 student.get("student_id", "")
             ).lower()
+
             or search_lower in str(
                 student.get("student_name", "")
             ).lower()
+
             or search_lower in str(
                 student.get("roll_no", "")
             ).lower()
@@ -2307,10 +2299,15 @@ def admin_reports():
 
         selected_year=selected_year,
 
+        selected_class_id=selected_class_id,
+
+        classes=classes_list,
+
         search_student=search_student
     )
 @app.route("/admin/reports/download")
 def admin_reports_download():
+
     if session.get("role") != "admin":
         return redirect(url_for("login"))
 
@@ -2326,15 +2323,47 @@ def admin_reports_download():
         type=int
     )
 
-    # Get all attendance records
-    attendance_records = list(db.attendance.find())
+    selected_class_id = request.args.get(
+        "class_id",
+        ""
+    ).strip()
 
+    # --------------------------------
+    # Attendance filter
+    # --------------------------------
+
+    attendance_filter = {}
+
+    if selected_class_id:
+        attendance_filter["class_id"] = selected_class_id
+
+    # --------------------------------
+    # Get attendance records
+    # --------------------------------
+
+    attendance_records = list(
+        db.attendance.find(attendance_filter)
+    )
+
+    # --------------------------------
     # Get students
-    students = list(db.students.find())
+    # --------------------------------
+
+    student_filter = {
+        "status": "active"
+    }
+
+    if selected_class_id:
+        student_filter["class_id"] = selected_class_id
+
+    students = list(
+        db.students.find(student_filter)
+    )
 
     student_report = {}
 
     for student in students:
+
         student_id = student.get("student_id")
 
         student_report[student_id] = {
@@ -2346,10 +2375,15 @@ def admin_reports_download():
             "working_days": 0
         }
 
-    # Group attendance by student and date
+    # --------------------------------
+    # Group attendance by
+    # student + date
+    # --------------------------------
+
     daily_attendance = {}
 
     for record in attendance_records:
+
         student_id = record.get("student_id")
 
         if student_id not in student_report:
@@ -2361,26 +2395,42 @@ def admin_reports_download():
             continue
 
         try:
-            if isinstance(attendance_date, datetime):
+
+            if isinstance(
+                attendance_date,
+                datetime
+            ):
+
                 record_date = attendance_date
+
             else:
+
                 record_date = datetime.strptime(
                     str(attendance_date)[:10],
                     "%Y-%m-%d"
                 )
-        except:
+
+        except (ValueError, TypeError):
+
             continue
 
-        # Only selected month and year
+        # --------------------------------
+        # Month + Year filter
+        # --------------------------------
+
         if (
             record_date.month != selected_month
             or record_date.year != selected_year
         ):
             continue
 
-        key = (student_id, record_date.strftime("%Y-%m-%d"))
+        key = (
+            student_id,
+            record_date.strftime("%Y-%m-%d")
+        )
 
         if key not in daily_attendance:
+
             daily_attendance[key] = {
                 "noon": None,
                 "afternoon": None
@@ -2393,43 +2443,97 @@ def admin_reports_download():
         status = record.get("status")
 
         if "noon" in session_name:
+
             daily_attendance[key]["noon"] = status
 
         elif "afternoon" in session_name:
+
             daily_attendance[key]["afternoon"] = status
 
+    # --------------------------------
     # Calculate monthly summary
-    for (student_id, date), sessions in daily_attendance.items():
+    # --------------------------------
+
+    for (
+        student_id,
+        date
+    ), sessions in daily_attendance.items():
 
         noon = sessions["noon"]
         afternoon = sessions["afternoon"]
 
-        student_report[student_id]["working_days"] += 1
+        student_report[
+            student_id
+        ]["working_days"] += 1
 
-        if noon == "Present" and afternoon == "Present":
-            student_report[student_id]["present"] += 1
+        if (
+            noon == "Present"
+            and afternoon == "Present"
+        ):
 
-        elif noon == "Absent" and afternoon == "Present":
-            student_report[student_id]["late"] += 1
+            student_report[
+                student_id
+            ]["present"] += 1
 
-        elif noon == "Present" and afternoon == "Absent":
-            student_report[student_id]["present"] += 1
+        elif (
+            noon == "Absent"
+            and afternoon == "Present"
+        ):
 
-        elif noon == "Absent" and afternoon == "Absent":
-            student_report[student_id]["absent"] += 1
+            student_report[
+                student_id
+            ]["late"] += 1
 
-        elif noon == "Present" and afternoon is None:
-            student_report[student_id]["present"] += 1
+        elif (
+            noon == "Present"
+            and afternoon == "Absent"
+        ):
 
-        elif noon == "Absent" and afternoon is None:
-            student_report[student_id]["absent"] += 1
+            student_report[
+                student_id
+            ]["present"] += 1
 
+        elif (
+            noon == "Absent"
+            and afternoon == "Absent"
+        ):
+
+            student_report[
+                student_id
+            ]["absent"] += 1
+
+        elif (
+            noon == "Present"
+            and afternoon is None
+        ):
+
+            student_report[
+                student_id
+            ]["present"] += 1
+
+        elif (
+            noon == "Absent"
+            and afternoon is None
+        ):
+
+            student_report[
+                student_id
+            ]["absent"] += 1
+
+    # --------------------------------
     # Create Excel workbook
+    # --------------------------------
+
     workbook = Workbook()
+
     worksheet = workbook.active
+
     worksheet.title = "Monthly Summary"
 
+    # --------------------------------
     # Headers
+    # --------------------------------
+
     headers = [
         "Student ID",
         "Student Name",
@@ -2442,21 +2546,30 @@ def admin_reports_download():
 
     worksheet.append(headers)
 
+    # --------------------------------
     # Add student data
+    # --------------------------------
+
     for student in student_report.values():
 
-        working_days = student["working_days"]
+        working_days = student[
+            "working_days"
+        ]
 
         attended_days = (
-            student["present"] +
-            student["late"]
+            student["present"]
+            + student["late"]
         )
 
         if working_days > 0:
+
             percentage = (
-                attended_days / working_days
+                attended_days
+                / working_days
             ) * 100
+
         else:
+
             percentage = 0
 
         worksheet.append([
@@ -2469,33 +2582,78 @@ def admin_reports_download():
             round(percentage, 2)
         ])
 
-    # Adjust column widths
-    worksheet.column_dimensions["A"].width = 15
-    worksheet.column_dimensions["B"].width = 25
-    worksheet.column_dimensions["C"].width = 12
-    worksheet.column_dimensions["D"].width = 12
-    worksheet.column_dimensions["E"].width = 12
-    worksheet.column_dimensions["F"].width = 15
-    worksheet.column_dimensions["G"].width = 15
+    # --------------------------------
+    # Column widths
+    # --------------------------------
 
+    worksheet.column_dimensions[
+        "A"
+    ].width = 15
+
+    worksheet.column_dimensions[
+        "B"
+    ].width = 25
+
+    worksheet.column_dimensions[
+        "C"
+    ].width = 12
+
+    worksheet.column_dimensions[
+        "D"
+    ].width = 12
+
+    worksheet.column_dimensions[
+        "E"
+    ].width = 12
+
+    worksheet.column_dimensions[
+        "F"
+    ].width = 15
+
+    worksheet.column_dimensions[
+        "G"
+    ].width = 15
+
+    # --------------------------------
     # Send Excel file
+    # --------------------------------
+
     output = BytesIO()
+
     workbook.save(output)
+
     output.seek(0)
+
+    # --------------------------------
+    # Filename
+    # --------------------------------
+
+    if selected_class_id:
+
+        filename = (
+            f"Monthly_Attendance_"
+            f"{selected_class_id}_"
+            f"{selected_year}_"
+            f"{selected_month:02d}.xlsx"
+        )
+
+    else:
+
+        filename = (
+            f"Monthly_Attendance_"
+            f"{selected_year}_"
+            f"{selected_month:02d}.xlsx"
+        )
 
     return send_file(
         output,
         as_attachment=True,
-        download_name=(
-            f"Monthly_Attendance_"
-            f"{selected_year}_{selected_month:02d}.xlsx"
-        ),
+        download_name=filename,
         mimetype=(
             "application/vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
         )
     )
-
 @app.route("/student/history")
 def student_history():
 
