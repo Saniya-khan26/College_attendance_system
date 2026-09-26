@@ -330,7 +330,6 @@ def faculty_attendance(class_id):
         today=today,
         today_display=datetime.now().strftime("%d-%m-%Y")
     )
-
 @app.route("/admin/dashboard")
 def admin_dashboard():
 
@@ -343,25 +342,88 @@ def admin_dashboard():
 
     total_faculty = db.faculty.count_documents({})
 
-    total_classes = db.classes.count_documents({})
+    total_classes = db.classes.count_documents({
+        "status": "active"
+    })
 
     today = datetime.now().strftime("%Y-%m-%d")
 
+    # Get today's attendance records
     today_attendance = list(
         db.attendance.find({
             "date": today
         })
     )
 
-    present_today = sum(
-        1 for record in today_attendance
-        if record.get("status") == "Present"
-    )
+    # --------------------------------------------------
+    # COUNT EACH STUDENT ONLY ONCE
+    # --------------------------------------------------
 
-    absent_today = sum(
-        1 for record in today_attendance
-        if record.get("status") == "Absent"
-    )
+    student_attendance = {}
+
+    for record in today_attendance:
+
+        student_id = record.get("student_id")
+
+        if not student_id:
+            continue
+
+        if student_id not in student_attendance:
+            student_attendance[student_id] = {
+                "noon": None,
+                "afternoon": None
+            }
+
+        session_type = record.get("session")
+        status = record.get("status")
+
+        if session_type == "noon":
+            student_attendance[student_id]["noon"] = status
+
+        elif session_type == "afternoon":
+            student_attendance[student_id]["afternoon"] = status
+
+    # --------------------------------------------------
+    # FINAL ATTENDANCE RESULT
+    # --------------------------------------------------
+
+    present_today = 0
+    absent_today = 0
+
+    for student_id, attendance in student_attendance.items():
+
+        noon = attendance.get("noon")
+        afternoon = attendance.get("afternoon")
+
+        # Both sessions present
+        if noon == "Present" and afternoon == "Present":
+            present_today += 1
+
+        # Student came later
+        elif noon == "Absent" and afternoon == "Present":
+            present_today += 1
+
+        # Student left midway
+        elif noon == "Present" and afternoon == "Absent":
+            present_today += 1
+
+        # Absent in both sessions
+        elif noon == "Absent" and afternoon == "Absent":
+            absent_today += 1
+
+        # Only noon attendance exists
+        elif noon == "Present" and afternoon is None:
+            present_today += 1
+
+        elif noon == "Absent" and afternoon is None:
+            absent_today += 1
+
+        # Only afternoon attendance exists
+        elif noon is None and afternoon == "Present":
+            present_today += 1
+
+        elif noon is None and afternoon == "Absent":
+            absent_today += 1
 
     return render_template(
         "admin/dashboard.html",
