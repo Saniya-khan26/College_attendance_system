@@ -1,0 +1,803 @@
+{% extends "base.html" %}
+
+{% block title %}
+Admin - Take Attendance
+{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        background: #f5f7fb;
+        font-family: Arial, sans-serif;
+    }
+
+    .container-box {
+        max-width: 1100px;
+        margin: 40px auto;
+    }
+
+    .card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .table th {
+        background: #212529;
+        color: white;
+    }
+
+    .student-name {
+        font-weight: 600;
+    }
+</style>
+
+<div class="container-box">
+
+    <!-- Header -->
+
+    <div class="card p-4 mb-4">
+
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+
+            <div>
+
+                <h2>📝 Take Attendance</h2>
+
+                <p class="text-muted mb-0">
+                    Admin Attendance
+                </p>
+
+            </div>
+
+            <a href="{{ url_for('admin_dashboard') }}"
+               class="btn btn-secondary">
+
+                ← Dashboard
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- Error -->
+
+    {% if error %}
+
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+
+    {% endif %}
+
+
+    <!-- Class Selection -->
+
+    <div class="card p-4 mb-4">
+
+        <h5 class="mb-3">
+            🏫 Select Class
+        </h5>
+
+        <form method="GET"
+              action="{{ url_for('admin_take_attendance') }}">
+
+            <div class="row g-3 align-items-end">
+
+                <div class="col-md-9">
+
+                    <label class="form-label fw-semibold">
+                        Class
+                    </label>
+
+                    <select
+                        name="class_id"
+                        class="form-select"
+                        required>
+
+                        <option value="">
+                            Select Class
+                        </option>
+
+                        {% for class in classes %}
+
+                        <option
+                            value="{{ class.class_id }}"
+                            {% if selected_class_id == class.class_id %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ class.course }}
+                            - Semester {{ class.semester }}
+                            - Division {{ class.division }}
+                            ({{ class.academic_year }})
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100">
+
+                        👥 Load Students
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    {% if selected_class %}
+
+    <!-- Selected Class -->
+
+    <div class="alert alert-info">
+
+        <strong>Selected Class:</strong>
+
+        {{ selected_class.course }}
+        - Semester {{ selected_class.semester }}
+        - Division {{ selected_class.division }}
+
+        <span class="ms-2">
+            ({{ selected_class.academic_year }})
+        </span>
+
+    </div>
+
+
+    <!-- Attendance Form -->
+
+    <form method="POST"
+          action="{{ url_for('admin_take_attendance') }}">
+
+        <input
+            type="hidden"
+            name="class_id"
+            value="{{ selected_class_id }}">
+
+        <div class="card p-4 mb-4">
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    <strong>Date:</strong>
+                    {{ today_display }}
+                </label>
+
+                <input
+                    type="hidden"
+                    name="date"
+                    value="{{ today }}">
+
+            </div>
+
+
+            <!-- Attendance Session -->
+
+            <div class="card shadow-sm border-0 mb-4 p-3">
+
+                <h5 class="mb-3">
+                    🕐 Attendance Session
+                </h5>
+
+                <div class="form-check mb-2">
+
+                    <input
+                        class="form-check-input"
+                        type="radio"
+                        name="session_type"
+                        id="noonSession"
+                        value="noon"
+                        required>
+
+                    <label
+                        class="form-check-label"
+                        for="noonSession">
+
+                        ☀️ Noon / First Lecture
+
+                    </label>
+
+                </div>
+
+
+                <div class="form-check">
+
+                    <input
+                        class="form-check-input"
+                        type="radio"
+                        name="session_type"
+                        id="afternoonSession"
+                        value="afternoon">
+
+                    <label
+                        class="form-check-label"
+                        for="afternoonSession">
+
+                        🌤️ Afternoon / Final Recheck
+
+                    </label>
+
+                </div>
+
+            </div>
+
+
+            <!-- Student Attendance -->
+
+            <div class="card p-4">
+
+                <h4 class="mb-4">
+                    👨‍🎓 Student Attendance
+                </h4>
+
+
+                {% if students %}
+
+                <!-- Control Buttons -->
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+
+                    <button
+                        type="button"
+                        class="btn btn-success"
+                        id="markAllPresent">
+
+                        ☑ Mark All Present
+
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        id="markAllAbsent">
+
+                        ☑ Mark All Absent
+
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        id="clearAttendance">
+
+                        Clear All
+
+                    </button>
+
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered align-middle">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Roll No.</th>
+
+                                <th>Student Name</th>
+
+                                <th>Student ID</th>
+
+                                <th>Noon Status</th>
+
+                                <th>Current Session</th>
+
+                                <th>Comparison</th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for student in students %}
+
+                            <tr>
+
+                                <!-- Roll Number -->
+
+                                <td>
+                                    {{ student.get("roll_no", "—") }}
+                                </td>
+
+
+                                <!-- Student Name -->
+
+                                <td>
+                                    <span class="student-name">
+                                        {{ student.name }}
+                                    </span>
+                                </td>
+
+
+                                <!-- Student ID -->
+
+                                <td>
+                                    {{ student.student_id }}
+                                </td>
+
+
+                                <!-- Noon Status -->
+
+                                <td>
+
+                                    {% if noon_status.get(student.student_id) == "Present" %}
+
+                                    <span class="badge bg-success">
+                                        Present
+                                    </span>
+
+                                    {% elif noon_status.get(student.student_id) == "Absent" %}
+
+                                    <span class="badge bg-danger">
+                                        Absent
+                                    </span>
+
+                                    {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Not Marked
+                                    </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <!-- Current Session -->
+
+                                <td>
+
+                                    <div class="form-check form-check-inline">
+
+                                        <input
+                                            class="form-check-input attendance-checkbox present-checkbox"
+                                            type="checkbox"
+                                            name="status_{{ student.student_id }}"
+                                            value="Present"
+                                            data-student="{{ student.student_id }}">
+
+                                        <label class="form-check-label text-success fw-semibold">
+
+                                            ☑ Present
+
+                                        </label>
+
+                                    </div>
+
+
+                                    <div class="form-check form-check-inline">
+
+                                        <input
+                                            class="form-check-input attendance-checkbox absent-checkbox"
+                                            type="checkbox"
+                                            name="status_{{ student.student_id }}"
+                                            value="Absent"
+                                            data-student="{{ student.student_id }}">
+
+                                        <label class="form-check-label text-danger fw-semibold">
+
+                                            ☑ Absent
+
+                                        </label>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- Comparison -->
+
+                                <td>
+
+                                    {% set result = comparison_results.get(student.student_id) %}
+
+                                    {% if result == "Left Midway" %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        ⚠️ Left Midway
+                                    </span>
+
+                                    {% elif result == "Late Arrival" %}
+
+                                    <span class="badge bg-primary">
+                                        🕐 Late Arrival
+                                    </span>
+
+                                    {% elif result == "Absent Both Sessions" %}
+
+                                    <span class="badge bg-danger">
+                                        ❌ Absent Both Sessions
+                                    </span>
+
+                                    {% elif result == "Present" %}
+
+                                    <span class="badge bg-success">
+                                        ✅ Present
+                                    </span>
+
+                                    {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Waiting for Recheck
+                                    </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- Recheck Results -->
+
+                {% if comparison_results %}
+
+                <div class="card border-0 shadow-sm mt-4 p-4">
+
+                    <h4 class="mb-4">
+                        📊 Attendance Recheck Results
+                    </h4>
+
+
+                    <!-- Left Midway -->
+
+                    <div class="mb-4">
+
+                        <h5 class="text-warning">
+                            ⚠️ Left Midway Students
+                        </h5>
+
+                        {% set ns = namespace(found=false) %}
+
+                        {% for student in students %}
+
+                        {% if comparison_results.get(student.student_id) == "Left Midway" %}
+
+                        {% set ns.found = true %}
+
+                        <div class="alert alert-warning mb-2">
+
+                            <strong>
+                                {{ student.student_id }}
+                            </strong>
+
+                            — {{ student.name }}
+
+                            <span class="badge bg-warning text-dark float-end">
+                                Left Midway
+                            </span>
+
+                        </div>
+
+                        {% endif %}
+
+                        {% endfor %}
+
+
+                        {% if not ns.found %}
+
+                        <p class="text-muted">
+                            No students left midway.
+                        </p>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- Late Arrivals -->
+
+                    <div class="mb-4">
+
+                        <h5 class="text-primary">
+                            🕐 Late Arrivals
+                        </h5>
+
+                        {% set ns = namespace(found=false) %}
+
+                        {% for student in students %}
+
+                        {% if comparison_results.get(student.student_id) == "Late Arrival" %}
+
+                        {% set ns.found = true %}
+
+                        <div class="alert alert-primary mb-2">
+
+                            <strong>
+                                {{ student.student_id }}
+                            </strong>
+
+                            — {{ student.name }}
+
+                            <span class="badge bg-primary float-end">
+                                Late Arrival
+                            </span>
+
+                        </div>
+
+                        {% endif %}
+
+                        {% endfor %}
+
+
+                        {% if not ns.found %}
+
+                        <p class="text-muted">
+                            No late arrivals.
+                        </p>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- Absent Both Sessions -->
+
+                    <div>
+
+                        <h5 class="text-danger">
+                            ❌ Absent in Both Sessions
+                        </h5>
+
+                        {% set ns = namespace(found=false) %}
+
+                        {% for student in students %}
+
+                        {% if comparison_results.get(student.student_id) == "Absent Both Sessions" %}
+
+                        {% set ns.found = true %}
+
+                        <div class="alert alert-danger mb-2">
+
+                            <strong>
+                                {{ student.student_id }}
+                            </strong>
+
+                            — {{ student.name }}
+
+                            <span class="badge bg-danger float-end">
+                                Absent Both Sessions
+                            </span>
+
+                        </div>
+
+                        {% endif %}
+
+                        {% endfor %}
+
+
+                        {% if not ns.found %}
+
+                        <p class="text-muted">
+                            No students were absent in both sessions.
+                        </p>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- Save Button -->
+
+                <div class="text-end mt-3">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary btn-lg">
+
+                        💾 Save Attendance
+
+                    </button>
+
+                </div>
+
+
+                {% else %}
+
+                <div class="alert alert-info text-center">
+
+                    No active students found in this class.
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </form>
+
+    {% else %}
+
+    <div class="card p-5 text-center">
+
+        <h4 class="mb-3">
+            🏫 Select a Class
+        </h4>
+
+        <p class="text-muted mb-0">
+            Select an active class above to load its students and take attendance.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const presentCheckboxes =
+        document.querySelectorAll(".present-checkbox");
+
+    const absentCheckboxes =
+        document.querySelectorAll(".absent-checkbox");
+
+
+    // Present checkbox
+
+    presentCheckboxes.forEach(function (checkbox) {
+
+        checkbox.addEventListener("change", function () {
+
+            if (this.checked) {
+
+                const studentId =
+                    this.dataset.student;
+
+                const absent =
+                    document.querySelector(
+                        '.absent-checkbox[data-student="' +
+                        studentId +
+                        '"]'
+                    );
+
+                if (absent) {
+                    absent.checked = false;
+                }
+
+            }
+
+        });
+
+    });
+
+
+    // Absent checkbox
+
+    absentCheckboxes.forEach(function (checkbox) {
+
+        checkbox.addEventListener("change", function () {
+
+            if (this.checked) {
+
+                const studentId =
+                    this.dataset.student;
+
+                const present =
+                    document.querySelector(
+                        '.present-checkbox[data-student="' +
+                        studentId +
+                        '"]'
+                    );
+
+                if (present) {
+                    present.checked = false;
+                }
+
+            }
+
+        });
+
+    });
+
+
+    // Mark all Present
+
+    const markAllPresent =
+        document.getElementById("markAllPresent");
+
+    if (markAllPresent) {
+
+        markAllPresent.addEventListener("click", function () {
+
+            presentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+
+            absentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+        });
+
+    }
+
+
+    // Mark all Absent
+
+    const markAllAbsent =
+        document.getElementById("markAllAbsent");
+
+    if (markAllAbsent) {
+
+        markAllAbsent.addEventListener("click", function () {
+
+            absentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+
+            presentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+        });
+
+    }
+
+
+    // Clear all
+
+    const clearAttendance =
+        document.getElementById("clearAttendance");
+
+    if (clearAttendance) {
+
+        clearAttendance.addEventListener("click", function () {
+
+            presentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+            absentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+        });
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

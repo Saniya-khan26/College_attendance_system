@@ -1693,6 +1693,450 @@ def admin_attendance():
         absent_count=absent_count,
         attendance_percentage=attendance_percentage
     )
+@app.route("/admin/take-attendance", methods=["GET", "POST"])
+def admin_take_attendance():
+
+    if session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    today_date = datetime.now().strftime("%Y-%m-%d")
+    today_display = datetime.now().strftime("%d %B %Y")
+
+    # --------------------------------
+    # Get all active classes
+    # --------------------------------
+
+    classes_list = list(
+        db.classes.find({
+            "status": "active"
+        }).sort([
+            ("course", 1),
+            ("semester", 1),
+            ("division", 1)
+        ])
+    )
+
+    # --------------------------------
+    # Selected class
+    # --------------------------------
+
+    selected_class_id = request.args.get(
+        "class_id",
+        ""
+    ).strip()
+
+    if request.method == "POST":
+        selected_class_id = request.form.get(
+            "class_id",
+            ""
+        ).strip()
+
+    # --------------------------------
+    # Validate selected class
+    # --------------------------------
+
+    selected_class = None
+
+    if selected_class_id:
+
+        selected_class = db.classes.find_one({
+            "class_id": selected_class_id,
+            "status": "active"
+        })
+
+        if not selected_class:
+
+            return render_template(
+                "admin/take_attendance.html",
+                today=today_date,
+                today_display=today_display,
+                classes=classes_list,
+                students=[],
+                selected_class_id="",
+                selected_class=None,
+                noon_status={},
+                comparison_results={},
+                error="Selected class is invalid."
+            )
+
+    # --------------------------------
+    # Get students of selected class
+    # --------------------------------
+
+    students = []
+
+    if selected_class:
+
+        students = list(
+            db.students.find({
+                "status": "active",
+                "class_id": selected_class_id
+            }).sort("roll_no", 1)
+        )
+
+    # --------------------------------
+    # Get today's noon attendance
+    # for selected class
+    # --------------------------------
+
+    noon_attendance = []
+
+    if selected_class:
+
+        noon_attendance = list(
+            db.attendance.find({
+                "date": today_date,
+                "session": "noon",
+                "class_id": selected_class_id
+            })
+        )
+
+    noon_status = {
+        record["student_id"]: record.get("status")
+        for record in noon_attendance
+    }
+
+    # --------------------------------
+    # Get comparison results
+    # --------------------------------
+
+    comparison_records = []
+
+    if selected_class:
+
+        comparison_records = list(
+            db.attendance.find({
+                "date": today_date,
+                "session": "afternoon",
+                "class_id": selected_class_id,
+                "attendance_type": {
+                    "$exists": True
+                }
+            })
+        )
+
+    comparison_results = {
+        record["student_id"]: record.get(
+            "attendance_type"
+        )
+        for record in comparison_records
+    }
+
+    # --------------------------------
+    # POST - Save attendance
+    # --------------------------------
+
+    if request.method == "POST":
+
+        session_type = request.form.get(
+            "session_type"
+        )
+
+        # Check class
+        if not selected_class:
+
+            return render_template(
+                "admin/take_attendance.html",
+                today=today_date,
+                today_display=today_display,
+                classes=classes_list,
+                students=students,
+                selected_class_id=selected_class_id,
+                selected_class=selected_class,
+                noon_status=noon_status,
+                comparison_results=comparison_results,
+                error="Please select a valid class."
+            )
+
+        # Check session
+        if session_type not in [
+            "noon",
+            "afternoon"
+        ]:
+
+            return render_template(
+                "admin/take_attendance.html",
+                today=today_date,
+                today_display=today_display,
+                classes=classes_list,
+                students=students,
+                selected_class_id=selected_class_id,
+                selected_class=selected_class,
+                noon_status=noon_status,
+                comparison_results=comparison_results,
+                error="Please select a valid attendance session."
+            )
+
+        # --------------------------------
+        # Sunday check
+        # --------------------------------
+
+        date_object = datetime.strptime(
+            today_date,
+            "%Y-%m-%d"
+        )
+
+        if date_object.weekday() == 6:
+
+            return render_template(
+                "admin/take_attendance.html",
+                today=today_date,
+                today_display=today_display,
+                classes=classes_list,
+                students=students,
+                selected_class_id=selected_class_id,
+                selected_class=selected_class,
+                noon_status=noon_status,
+                comparison_results=comparison_results,
+                error="Attendance cannot be marked on Sunday."
+            )
+
+        # --------------------------------
+        # Holiday check
+        # --------------------------------
+
+        holiday = db.holidays.find_one({
+            "date": today_date
+        })
+
+        if holiday:
+
+            return render_template(
+                "admin/take_attendance.html",
+                today=today_date,
+                today_display=today_display,
+                classes=classes_list,
+                students=students,
+                selected_class_id=selected_class_id,
+                selected_class=selected_class,
+                noon_status=noon_status,
+                comparison_results=comparison_results,
+                error="Attendance cannot be marked on a holiday."
+            )
+
+        # --------------------------------
+        # Prevent duplicate attendance
+        # for same class/session/date
+        # --------------------------------
+
+        existing_attendance = db.attendance.find_one({
+            "date": today_date,
+            "session": session_type,
+            "class_id": selected_class_id
+        })
+
+        if existing_attendance:
+
+            return render_template(
+                "admin/take_attendance.html",
+                today=today_date,
+                today_display=today_display,
+                classes=classes_list,
+                students=students,
+                selected_class_id=selected_class_id,
+                selected_class=selected_class,
+                noon_status=noon_status,
+                comparison_results=comparison_results,
+                error=(
+                    "Attendance for this class and "
+                    "session has already been marked."
+                )
+            )
+
+        # --------------------------------
+        # Create attendance records
+        # --------------------------------
+
+        attendance_records = []
+
+        for student in students:
+
+            student_id = student["student_id"]
+
+            status = request.form.get(
+                f"status_{student_id}",
+                "Absent"
+            )
+
+            # Safety validation
+            if status not in [
+                "Present",
+                "Absent"
+            ]:
+                status = "Absent"
+
+            attendance_records.append({
+
+                "student_id": student_id,
+
+                "student_name": student["name"],
+
+                "roll_no": student.get(
+                    "roll_no"
+                ),
+
+                "faculty_id": "ADMIN",
+
+                "class_id": selected_class_id,
+
+                "date": today_date,
+
+                "session": session_type,
+
+                "status": status,
+
+                "created_at": datetime.now()
+            })
+
+        # --------------------------------
+        # Save attendance
+        # --------------------------------
+
+        if attendance_records:
+
+            db.attendance.insert_many(
+                attendance_records
+            )
+
+        # --------------------------------
+        # Compare Noon + Afternoon
+        # --------------------------------
+
+        if session_type == "afternoon":
+
+            noon_records = list(
+                db.attendance.find({
+                    "date": today_date,
+                    "session": "noon",
+                    "class_id": selected_class_id
+                })
+            )
+
+            afternoon_records = list(
+                db.attendance.find({
+                    "date": today_date,
+                    "session": "afternoon",
+                    "class_id": selected_class_id
+                })
+            )
+
+            noon_by_student = {
+                record["student_id"]: record
+                for record in noon_records
+            }
+
+            afternoon_by_student = {
+                record["student_id"]: record
+                for record in afternoon_records
+            }
+
+            for student_id, noon_record in noon_by_student.items():
+
+                afternoon_record = (
+                    afternoon_by_student.get(
+                        student_id
+                    )
+                )
+
+                if not afternoon_record:
+                    continue
+
+                noon_status_value = noon_record.get(
+                    "status"
+                )
+
+                afternoon_status_value = (
+                    afternoon_record.get("status")
+                )
+
+                # Present in both sessions
+                if (
+                    noon_status_value == "Present"
+                    and afternoon_status_value == "Present"
+                ):
+
+                    attendance_type = "Present"
+
+                # Absent at noon, present afternoon
+                elif (
+                    noon_status_value == "Absent"
+                    and afternoon_status_value == "Present"
+                ):
+
+                    attendance_type = "Late Arrival"
+
+                # Present at noon, absent afternoon
+                elif (
+                    noon_status_value == "Present"
+                    and afternoon_status_value == "Absent"
+                ):
+
+                    attendance_type = "Left Midway"
+
+                # Absent in both
+                elif (
+                    noon_status_value == "Absent"
+                    and afternoon_status_value == "Absent"
+                ):
+
+                    attendance_type = "Absent Both Sessions"
+
+                else:
+
+                    attendance_type = "Waiting for Recheck"
+
+                # Update afternoon record
+                db.attendance.update_one(
+                    {
+                        "_id": afternoon_record["_id"]
+                    },
+                    {
+                        "$set": {
+                            "attendance_type":
+                                attendance_type
+                        }
+                    }
+                )
+
+                # Update noon record
+                db.attendance.update_one(
+                    {
+                        "_id": noon_record["_id"]
+                    },
+                    {
+                        "$set": {
+                            "attendance_type":
+                                attendance_type
+                        }
+                    }
+                )
+
+                comparison_results[
+                    student_id
+                ] = attendance_type
+
+        return redirect(
+            url_for(
+                "admin_take_attendance",
+                class_id=selected_class_id
+            )
+        )
+
+    # --------------------------------
+    # Display page
+    # --------------------------------
+
+    return render_template(
+        "admin/take_attendance.html",
+        today=today_date,
+        today_display=today_display,
+        classes=classes_list,
+        students=students,
+        selected_class_id=selected_class_id,
+        selected_class=selected_class,
+        noon_status=noon_status,
+        comparison_results=comparison_results
+    )
 
 @app.route("/faculty/students")
 def faculty_students():
