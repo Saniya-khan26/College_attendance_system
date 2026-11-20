@@ -140,22 +140,6 @@ The system compares both sessions and automatically determines the student's fin
 
 ---
 
-## 📸 Screenshots
-
-### Admin Dashboard
-Shows the total students, faculty, classes, and today's attendance summary.
-
-### Attendance Report
-Daily attendance records with class, date, student search, and final attendance results.
-
-### Monthly Attendance Report
-Student-wise monthly attendance statistics and attendance percentages.
-
-### Faculty Dashboard
-Assigned classes and attendance management options.
-
-> Screenshots of the application can be added in this section.
-
 ---
 
 ## 🚀 Installation & Setup
